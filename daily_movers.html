@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Movers — NASDAQ & TASE</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #0f1419;
+      color: #e7e9ea;
+      margin: 0;
+      padding: 1.5rem;
+      min-height: 100vh;
+    }
+    header { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+    .subtitle { color: #71767b; font-size: 0.85rem; }
+    .refresh { color: #8b98a5; font-size: 0.8rem; }
+    section { margin-bottom: 2rem; }
+    section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #e7e9ea; }
+    section h2 .badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; }
+    .badge-gain { background: #00ba7c33; color: #00ba7c; }
+    .badge-loss { background: #f4212e33; color: #f4212e; }
+    table { width: 100%; max-width: 36rem; border-collapse: collapse; background: #16181c; border-radius: 10px; overflow: hidden; }
+    th, td { padding: 0.6rem 0.9rem; text-align: left; }
+    th { background: #1d2127; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #8b98a5; }
+    tr:not(:last-child) td { border-bottom: 1px solid #2f3336; }
+    tr:hover td { background: #1d2127; }
+    td:nth-child(1) { width: 2.5rem; color: #8b98a5; }
+    td:nth-child(2) { font-weight: 600; }
+    a { color: #1d9bf0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Daily Movers — NASDAQ & TASE</h1>
+      <p class="subtitle">Gainers and losers · Data from Yahoo Finance</p>
+    </div>
+    <p class="refresh">Last updated: 2026-03-15 23:45 · Run <code>python build_daily_movers_html.py</code> to refresh</p>
+  </header>
+  <div class="grid">
+    <section>
+      <h2>NASDAQ <span class="badge badge-gain">Gainers</span></h2>
+      <table>
+        <thead><tr><th>#</th><th>Ticker</th><th>Prev</th><th>Last</th><th>Change %</th><th></th></tr></thead>
+        <tbody><tr><td>1</td><td>ODFL</td><td>176.24</td><td>180.75</td><td style="color:#00ba7c;font-weight:600">+2.56%</td><td><a href="https://finance.yahoo.com/quote/ODFL" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>2</td><td>TEAM</td><td>73.34</td><td>75.21</td><td style="color:#00ba7c;font-weight:600">+2.55%</td><td><a href="https://finance.yahoo.com/quote/TEAM" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>3</td><td>CDW</td><td>113.48</td><td>116.16</td><td style="color:#00ba7c;font-weight:600">+2.36%</td><td><a href="https://finance.yahoo.com/quote/CDW" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>4</td><td>VRSK</td><td>197.54</td><td>201.22</td><td style="color:#00ba7c;font-weight:600">+1.86%</td><td><a href="https://finance.yahoo.com/quote/VRSK" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>5</td><td>KDP</td><td>26.93</td><td>27.41</td><td style="color:#00ba7c;font-weight:600">+1.78%</td><td><a href="https://finance.yahoo.com/quote/KDP" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>6</td><td>CHTR</td><td>215.08</td><td>218.19</td><td style="color:#00ba7c;font-weight:600">+1.45%</td><td><a href="https://finance.yahoo.com/quote/CHTR" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>7</td><td>ZS</td><td>151.61</td><td>153.76</td><td style="color:#00ba7c;font-weight:600">+1.42%</td><td><a href="https://finance.yahoo.com/quote/ZS" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>8</td><td>TMUS</td><td>214.37</td><td>217.39</td><td style="color:#00ba7c;font-weight:600">+1.41%</td><td><a href="https://finance.yahoo.com/quote/TMUS" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>9</td><td>ADP</td><td>205.75</td><td>208.52</td><td style="color:#00ba7c;font-weight:600">+1.35%</td><td><a href="https://finance.yahoo.com/quote/ADP" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>10</td><td>LRCX</td><td>209.49</td><td>212.20</td><td style="color:#00ba7c;font-weight:600">+1.29%</td><td><a href="https://finance.yahoo.com/quote/LRCX" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>11</td><td>AMAT</td><td>337.27</td><td>341.53</td><td style="color:#00ba7c;font-weight:600">+1.26%</td><td><a href="https://finance.yahoo.com/quote/AMAT" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>12</td><td>INTC</td><td>45.25</td><td>45.77</td><td style="color:#00ba7c;font-weight:600">+1.15%</td><td><a href="https://finance.yahoo.com/quote/INTC" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>13</td><td>INTU</td><td>435.13</td><td>439.96</td><td style="color:#00ba7c;font-weight:600">+1.11%</td><td><a href="https://finance.yahoo.com/quote/INTU" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>14</td><td>NFLX</td><td>94.31</td><td>95.31</td><td style="color:#00ba7c;font-weight:600">+1.06%</td><td><a href="https://finance.yahoo.com/quote/NFLX" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>15</td><td>PAYX</td><td>91.67</td><td>92.61</td><td style="color:#00ba7c;font-weight:600">+1.03%</td><td><a href="https://finance.yahoo.com/quote/PAYX" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>16</td><td>MDLZ</td><td>54.35</td><td>54.89</td><td style="color:#00ba7c;font-weight:600">+0.99%</td><td><a href="https://finance.yahoo.com/quote/MDLZ" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>17</td><td>PEP</td><td>158.86</td><td>159.88</td><td style="color:#00ba7c;font-weight:600">+0.64%</td><td><a href="https://finance.yahoo.com/quote/PEP" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>18</td><td>KLAC</td><td>1409.57</td><td>1418.64</td><td style="color:#00ba7c;font-weight:600">+0.64%</td><td><a href="https://finance.yahoo.com/quote/KLAC" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>19</td><td>GEHC</td><td>70.33</td><td>70.77</td><td style="color:#00ba7c;font-weight:600">+0.63%</td><td><a href="https://finance.yahoo.com/quote/GEHC" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>20</td><td>LCID</td><td>9.84</td><td>9.90</td><td style="color:#00ba7c;font-weight:600">+0.61%</td><td><a href="https://finance.yahoo.com/quote/LCID" target="_blank" rel="noopener">Yahoo</a></td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>NASDAQ <span class="badge badge-loss">Losers</span></h2>
+      <table>
+        <thead><tr><th>#</th><th>Ticker</th><th>Prev</th><th>Last</th><th>Change %</th><th></th></tr></thead>
+        <tbody><tr><td>1</td><td>ADBE</td><td>269.78</td><td>249.32</td><td style="color:#f4212e;font-weight:600">-7.58%</td><td><a href="https://finance.yahoo.com/quote/ADBE" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>2</td><td>AVGO</td><td>335.97</td><td>322.16</td><td style="color:#f4212e;font-weight:600">-4.11%</td><td><a href="https://finance.yahoo.com/quote/AVGO" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>3</td><td>META</td><td>638.18</td><td>613.71</td><td style="color:#f4212e;font-weight:600">-3.83%</td><td><a href="https://finance.yahoo.com/quote/META" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>4</td><td>RIVN</td><td>15.30</td><td>14.86</td><td style="color:#f4212e;font-weight:600">-2.88%</td><td><a href="https://finance.yahoo.com/quote/RIVN" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>5</td><td>AAPL</td><td>255.76</td><td>250.12</td><td style="color:#f4212e;font-weight:600">-2.21%</td><td><a href="https://finance.yahoo.com/quote/AAPL" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>6</td><td>AMD</td><td>197.74</td><td>193.39</td><td style="color:#f4212e;font-weight:600">-2.20%</td><td><a href="https://finance.yahoo.com/quote/AMD" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>7</td><td>DDOG</td><td>127.16</td><td>124.52</td><td style="color:#f4212e;font-weight:600">-2.08%</td><td><a href="https://finance.yahoo.com/quote/DDOG" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>8</td><td>VRTX</td><td>478.13</td><td>469.34</td><td style="color:#f4212e;font-weight:600">-1.84%</td><td><a href="https://finance.yahoo.com/quote/VRTX" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>9</td><td>NVDA</td><td>183.14</td><td>180.25</td><td style="color:#f4212e;font-weight:600">-1.58%</td><td><a href="https://finance.yahoo.com/quote/NVDA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>10</td><td>MSFT</td><td>401.86</td><td>395.55</td><td style="color:#f4212e;font-weight:600">-1.57%</td><td><a href="https://finance.yahoo.com/quote/MSFT" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>11</td><td>DXCM</td><td>65.26</td><td>64.24</td><td style="color:#f4212e;font-weight:600">-1.56%</td><td><a href="https://finance.yahoo.com/quote/DXCM" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>12</td><td>ORLY</td><td>92.98</td><td>91.54</td><td style="color:#f4212e;font-weight:600">-1.55%</td><td><a href="https://finance.yahoo.com/quote/ORLY" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>13</td><td>ISRG</td><td>479.27</td><td>472.16</td><td style="color:#f4212e;font-weight:600">-1.48%</td><td><a href="https://finance.yahoo.com/quote/ISRG" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>14</td><td>SNPS</td><td>418.72</td><td>412.63</td><td style="color:#f4212e;font-weight:600">-1.45%</td><td><a href="https://finance.yahoo.com/quote/SNPS" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>15</td><td>PCAR</td><td>116.82</td><td>115.34</td><td style="color:#f4212e;font-weight:600">-1.27%</td><td><a href="https://finance.yahoo.com/quote/PCAR" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>16</td><td>FTNT</td><td>84.40</td><td>83.44</td><td style="color:#f4212e;font-weight:600">-1.14%</td><td><a href="https://finance.yahoo.com/quote/FTNT" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>17</td><td>CDNS</td><td>290.32</td><td>287.03</td><td style="color:#f4212e;font-weight:600">-1.13%</td><td><a href="https://finance.yahoo.com/quote/CDNS" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>18</td><td>ABNB</td><td>127.70</td><td>126.30</td><td style="color:#f4212e;font-weight:600">-1.10%</td><td><a href="https://finance.yahoo.com/quote/ABNB" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>19</td><td>SBUX</td><td>100.18</td><td>99.15</td><td style="color:#f4212e;font-weight:600">-1.03%</td><td><a href="https://finance.yahoo.com/quote/SBUX" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>20</td><td>QCOM</td><td>131.15</td><td>129.82</td><td style="color:#f4212e;font-weight:600">-1.01%</td><td><a href="https://finance.yahoo.com/quote/QCOM" target="_blank" rel="noopener">Yahoo</a></td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>TASE (Tel Aviv) <span class="badge badge-gain">Gainers</span></h2>
+      <table>
+        <thead><tr><th>#</th><th>Ticker</th><th>Prev</th><th>Last</th><th>Change %</th><th></th></tr></thead>
+        <tbody><tr><td>1</td><td>NXSN.TA</td><td>34900.00</td><td>36300.00</td><td style="color:#00ba7c;font-weight:600">+4.01%</td><td><a href="https://finance.yahoo.com/quote/NXSN.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>2</td><td>TRAN.TA</td><td>50.40</td><td>52.00</td><td style="color:#00ba7c;font-weight:600">+3.17%</td><td><a href="https://finance.yahoo.com/quote/TRAN.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>3</td><td>EVGN.TA</td><td>256.30</td><td>264.00</td><td style="color:#00ba7c;font-weight:600">+3.00%</td><td><a href="https://finance.yahoo.com/quote/EVGN.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>4</td><td>TDRN.TA</td><td>19240.00</td><td>19750.00</td><td style="color:#00ba7c;font-weight:600">+2.65%</td><td><a href="https://finance.yahoo.com/quote/TDRN.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>5</td><td>ENLT.TA</td><td>21600.00</td><td>22140.00</td><td style="color:#00ba7c;font-weight:600">+2.50%</td><td><a href="https://finance.yahoo.com/quote/ENLT.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>6</td><td>NVPT.TA</td><td>12600.00</td><td>12840.00</td><td style="color:#00ba7c;font-weight:600">+1.90%</td><td><a href="https://finance.yahoo.com/quote/NVPT.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>7</td><td>MMHD.TA</td><td>49220.00</td><td>50070.00</td><td style="color:#00ba7c;font-weight:600">+1.73%</td><td><a href="https://finance.yahoo.com/quote/MMHD.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>8</td><td>ESLT.TA</td><td>270700.00</td><td>274900.00</td><td style="color:#00ba7c;font-weight:600">+1.55%</td><td><a href="https://finance.yahoo.com/quote/ESLT.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>9</td><td>HARL.TA</td><td>18020.00</td><td>18300.00</td><td style="color:#00ba7c;font-weight:600">+1.55%</td><td><a href="https://finance.yahoo.com/quote/HARL.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>10</td><td>STRS.TA</td><td>13780.00</td><td>13990.00</td><td style="color:#00ba7c;font-weight:600">+1.52%</td><td><a href="https://finance.yahoo.com/quote/STRS.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>11</td><td>GEFR.TA</td><td>80.70</td><td>81.90</td><td style="color:#00ba7c;font-weight:600">+1.49%</td><td><a href="https://finance.yahoo.com/quote/GEFR.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>12</td><td>MTRX.TA</td><td>9746.00</td><td>9852.00</td><td style="color:#00ba7c;font-weight:600">+1.09%</td><td><a href="https://finance.yahoo.com/quote/MTRX.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>13</td><td>SRAC.TA</td><td>5873.00</td><td>5930.00</td><td style="color:#00ba7c;font-weight:600">+0.97%</td><td><a href="https://finance.yahoo.com/quote/SRAC.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>14</td><td>ICL.TA</td><td>1710.00</td><td>1726.00</td><td style="color:#00ba7c;font-weight:600">+0.94%</td><td><a href="https://finance.yahoo.com/quote/ICL.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>15</td><td>DIMRI.TA</td><td>44750.00</td><td>45130.00</td><td style="color:#00ba7c;font-weight:600">+0.85%</td><td><a href="https://finance.yahoo.com/quote/DIMRI.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>16</td><td>BEZQ.TA</td><td>806.70</td><td>813.20</td><td style="color:#00ba7c;font-weight:600">+0.81%</td><td><a href="https://finance.yahoo.com/quote/BEZQ.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>17</td><td>PHOE.TA</td><td>16870.00</td><td>17000.00</td><td style="color:#00ba7c;font-weight:600">+0.77%</td><td><a href="https://finance.yahoo.com/quote/PHOE.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>18</td><td>NVMI.TA</td><td>133040.00</td><td>133990.00</td><td style="color:#00ba7c;font-weight:600">+0.71%</td><td><a href="https://finance.yahoo.com/quote/NVMI.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>19</td><td>TSEM.TA</td><td>37790.00</td><td>38060.00</td><td style="color:#00ba7c;font-weight:600">+0.71%</td><td><a href="https://finance.yahoo.com/quote/TSEM.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>20</td><td>CMDR.TA</td><td>32590.00</td><td>32800.00</td><td style="color:#00ba7c;font-weight:600">+0.64%</td><td><a href="https://finance.yahoo.com/quote/CMDR.TA" target="_blank" rel="noopener">Yahoo</a></td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>TASE (Tel Aviv) <span class="badge badge-loss">Losers</span></h2>
+      <table>
+        <thead><tr><th>#</th><th>Ticker</th><th>Prev</th><th>Last</th><th>Change %</th><th></th></tr></thead>
+        <tbody><tr><td>1</td><td>RVL.TA</td><td>202.50</td><td>192.20</td><td style="color:#f4212e;font-weight:600">-5.09%</td><td><a href="https://finance.yahoo.com/quote/RVL.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>2</td><td>SMNR.TA</td><td>1602.00</td><td>1564.00</td><td style="color:#f4212e;font-weight:600">-2.37%</td><td><a href="https://finance.yahoo.com/quote/SMNR.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>3</td><td>ELAL.TA</td><td>1358.00</td><td>1326.00</td><td style="color:#f4212e;font-weight:600">-2.36%</td><td><a href="https://finance.yahoo.com/quote/ELAL.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>4</td><td>BOLT.TA</td><td>322.10</td><td>316.30</td><td style="color:#f4212e;font-weight:600">-1.80%</td><td><a href="https://finance.yahoo.com/quote/BOLT.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>5</td><td>BRAN.TA</td><td>2697.00</td><td>2658.00</td><td style="color:#f4212e;font-weight:600">-1.45%</td><td><a href="https://finance.yahoo.com/quote/BRAN.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>6</td><td>NICE.TA</td><td>37800.00</td><td>37260.00</td><td style="color:#f4212e;font-weight:600">-1.43%</td><td><a href="https://finance.yahoo.com/quote/NICE.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>7</td><td>TATT.TA</td><td>17950.00</td><td>17740.00</td><td style="color:#f4212e;font-weight:600">-1.17%</td><td><a href="https://finance.yahoo.com/quote/TATT.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>8</td><td>TASE.TA</td><td>15128.44</td><td>14970.00</td><td style="color:#f4212e;font-weight:600">-1.05%</td><td><a href="https://finance.yahoo.com/quote/TASE.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>9</td><td>TEVA.TA</td><td>9374.00</td><td>9290.00</td><td style="color:#f4212e;font-weight:600">-0.90%</td><td><a href="https://finance.yahoo.com/quote/TEVA.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>10</td><td>GILT.TA</td><td>5205.00</td><td>5166.00</td><td style="color:#f4212e;font-weight:600">-0.75%</td><td><a href="https://finance.yahoo.com/quote/GILT.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>11</td><td>WILC.TA</td><td>8344.00</td><td>8286.00</td><td style="color:#f4212e;font-weight:600">-0.70%</td><td><a href="https://finance.yahoo.com/quote/WILC.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>12</td><td>PNRG.TA</td><td>235.70</td><td>234.20</td><td style="color:#f4212e;font-weight:600">-0.64%</td><td><a href="https://finance.yahoo.com/quote/PNRG.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>13</td><td>OPK.TA</td><td>362.60</td><td>360.50</td><td style="color:#f4212e;font-weight:600">-0.58%</td><td><a href="https://finance.yahoo.com/quote/OPK.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>14</td><td>NWMD.TA</td><td>1980.00</td><td>1969.00</td><td style="color:#f4212e;font-weight:600">-0.56%</td><td><a href="https://finance.yahoo.com/quote/NWMD.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>15</td><td>AMOT.TA</td><td>2072.00</td><td>2064.00</td><td style="color:#f4212e;font-weight:600">-0.39%</td><td><a href="https://finance.yahoo.com/quote/AMOT.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>16</td><td>ORL.TA</td><td>122.70</td><td>122.40</td><td style="color:#f4212e;font-weight:600">-0.24%</td><td><a href="https://finance.yahoo.com/quote/ORL.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>17</td><td>KMDA.TA</td><td>2747.00</td><td>2742.00</td><td style="color:#f4212e;font-weight:600">-0.18%</td><td><a href="https://finance.yahoo.com/quote/KMDA.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>18</td><td>LUMI.TA</td><td>7303.00</td><td>7292.00</td><td style="color:#f4212e;font-weight:600">-0.15%</td><td><a href="https://finance.yahoo.com/quote/LUMI.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>19</td><td>PRIM.TA</td><td>2833.00</td><td>2829.00</td><td style="color:#f4212e;font-weight:600">-0.14%</td><td><a href="https://finance.yahoo.com/quote/PRIM.TA" target="_blank" rel="noopener">Yahoo</a></td></tr>
+<tr><td>20</td><td>POLI.TA</td><td>7787.00</td><td>7779.00</td><td style="color:#f4212e;font-weight:600">-0.10%</td><td><a href="https://finance.yahoo.com/quote/POLI.TA" target="_blank" rel="noopener">Yahoo</a></td></tr></tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

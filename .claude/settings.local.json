@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start \"C:\\\\Users\\\\Lenovo\\\\Documents\\\\code\\\\tictactoe.html\")"
+    ]
+  }
+}

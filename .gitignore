@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv/
+venv/
+*.egg-info/
+.eggs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated data (optional: remove these lines if you want to track CSV/HTML)
+# nasdaq_top20_last_week.csv
+# nasdaq_top20_last_week.html
+# tase_top20_last_week.csv
+# tase_top20_last_week.html

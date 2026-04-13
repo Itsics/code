@@ -284,6 +284,75 @@
       font-size: 0.75rem; color: #ffd70099;
     }
 
+    /* ── Tab Nav ── */
+    .tab-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tab-btn {
+      padding: 0.5rem 1.2rem; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); font-size: 0.85rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+    .tab-btn.active { border-color: var(--accent); background: #1d9bf022; color: var(--accent); font-weight: 700; }
+
+    /* ── Weekly / Top Picks ── */
+    .weekly-header { margin-bottom: 1.2rem; }
+    .weekly-header h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.3rem; }
+    .weekly-header p  { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+    .picks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.9rem; }
+
+    .pick-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .pick-card:hover { border-color: var(--yellow); transform: translateY(-2px); }
+    .pick-card.rank-1 { border-color: #ffd700; box-shadow: 0 0 12px #ffd70022; }
+    .pick-card.rank-2 { border-color: #c0c0c0; }
+    .pick-card.rank-3 { border-color: #cd7f32; }
+
+    .pick-rank { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .rank-1 .pick-rank { color: var(--yellow); }
+    .rank-2 .pick-rank { color: #c0c0c0; }
+    .rank-3 .pick-rank { color: #cd7f32; }
+
+    .pick-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.7rem; }
+    .pick-ticker { font-size: 1rem; font-weight: 700; }
+    .pick-name   { font-size: 0.72rem; color: var(--muted); }
+    .pick-price  { text-align: left; }
+    .pick-price .val { font-size: 0.95rem; font-weight: 700; }
+    .pick-price .chg { font-size: 0.75rem; }
+
+    .score-bar-wrap { margin-bottom: 0.7rem; }
+    .score-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .score-label span:last-child { font-weight: 700; color: var(--text); }
+    .score-bar-bg { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .score-high   { background: var(--green); }
+    .score-medium { background: var(--yellow); }
+    .score-low    { background: var(--red); }
+
+    .pick-reasons { margin-bottom: 0.7rem; }
+    .reason-chip {
+      display: inline-block; font-size: 0.68rem;
+      padding: 0.15rem 0.5rem; border-radius: 20px; margin: 0.15rem 0.15rem 0 0;
+      background: #1d9bf015; color: var(--accent); border: 1px solid #1d9bf033;
+    }
+
+    .pick-footer { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+
+    .weekly-scan-btn {
+      width: 100%; padding: 0.65rem;
+      border-radius: 10px; border: none;
+      background: linear-gradient(135deg, #1d9bf0, #a855f7);
+      color: #fff; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; margin-bottom: 1.2rem;
+      transition: opacity 0.15s;
+    }
+    .weekly-scan-btn:hover { opacity: 0.9; }
+    .weekly-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
     /* Watchlist sidebar panel */
     .watchlist-panel {
       background: var(--surface2);
@@ -417,11 +486,37 @@
     </aside>
 
     <!-- Content -->
-    <div class="content" id="contentArea">
-      <div class="empty-state">
-        <div class="icon">📈</div>
-        <h3>מוכן לסרוק את השוק</h3>
-        <p>הגדר את הקריטריונים בצד שמאל ולחץ "צור דוח יומי" לקבל רשימת מניות פוטנציאליות</p>
+    <div class="content">
+      <div class="tab-nav">
+        <button class="tab-btn active" id="tabDaily"   onclick="switchTab('daily')">📋 דוח יומי</button>
+        <button class="tab-btn"        id="tabWeekly"  onclick="switchTab('weekly')">🏆 ניתוח שבועי · פוטנציאל גבוה</button>
+      </div>
+
+      <!-- Daily tab -->
+      <div id="panelDaily">
+        <div id="contentArea">
+          <div class="empty-state">
+            <div class="icon">📈</div>
+            <h3>מוכן לסרוק את השוק</h3>
+            <p>הגדר את הקריטריונים בצד שמאל ולחץ "צור דוח יומי" לקבל רשימת מניות פוטנציאליות</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly tab -->
+      <div id="panelWeekly" style="display:none">
+        <div class="weekly-header">
+          <h2>🏆 מניות עם הפוטנציאל הגבוה ביותר לעלות</h2>
+          <p>ציון מבוסס על: גידול הכנסות · מומנטום שבועי · נפח מסחר · מיקום 52-שבועות · יעד אנליסטים</p>
+        </div>
+        <button class="weekly-scan-btn" id="weeklyScanBtn" onclick="loadWeeklyAnalysis()">🔍 סרוק את כל המניות ומצא את הטובות ביותר</button>
+        <div id="weeklyContent">
+          <div class="empty-state">
+            <div class="icon">🏆</div>
+            <h3>לחץ לסריקה שבועית</h3>
+            <p>הסריקה בוחנת את כל המניות במאגר ומדרגת אותן לפי 5 גורמים. תיקח כ-30–60 שניות.</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -656,6 +751,108 @@
   }
 
   const API_BASE = 'http://127.0.0.1:5001';
+
+  // ── Tab switching ──
+  function switchTab(tab) {
+    document.getElementById('panelDaily').style.display  = tab === 'daily'  ? '' : 'none';
+    document.getElementById('panelWeekly').style.display = tab === 'weekly' ? '' : 'none';
+    document.getElementById('tabDaily').classList.toggle('active',  tab === 'daily');
+    document.getElementById('tabWeekly').classList.toggle('active', tab === 'weekly');
+  }
+
+  // ── Weekly Analysis ──
+  async function loadWeeklyAnalysis() {
+    const btn  = document.getElementById('weeklyScanBtn');
+    const area = document.getElementById('weeklyContent');
+    btn.disabled = true;
+    btn.textContent = '⏳ סורק את כל המניות...';
+    area.innerHTML = `<div class="loading"><div class="spinner"></div><p>סורק ${ALL_TICKERS_COUNT}+ מניות לפי 5 גורמים...<br><small style="color:var(--muted)">זה עשוי לקחת 30–60 שניות</small></p></div>`;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/weekly-analysis`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const { top_picks, total_scanned, as_of, date } = await res.json();
+      renderWeekly(top_picks, total_scanned, as_of, date);
+    } catch (err) {
+      area.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h3>שגיאה</h3><p>${err.message}</p></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔄 רענן סריקה';
+    }
+  }
+
+  const ALL_TICKERS_COUNT = 45;
+
+  function scoreColor(s) {
+    if (s >= 65) return 'score-high';
+    if (s >= 35) return 'score-medium';
+    return 'score-low';
+  }
+
+  function renderWeekly(picks, total, as_of, date) {
+    const area = document.getElementById('weeklyContent');
+    if (!picks || picks.length === 0) {
+      area.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>לא נמצאו תוצאות</h3></div>`;
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    const rankClass = (i) => i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+
+    const statusHtml = `
+      <div class="status-bar" style="margin-bottom:1rem">
+        <span>סרקתי <strong>${total} מניות</strong></span>
+        <span class="badge badge-count">Top ${picks.length}</span>
+        <span style="color:var(--green);font-size:0.75rem">● נתונים חיים</span>
+        <span class="status-date">${date} · ${as_of}</span>
+      </div>`;
+
+    const cardsHtml = picks.map((s, i) => {
+      const isPos = s.change_5d >= 0;
+      const fillW = Math.min(s.score, 100);
+      const rankCls = rankClass(i);
+      const medal = medals[i] || `#${i + 1}`;
+      const upsideText = s.analyst_upside != null ? `יעד אנליסטים: +${s.analyst_upside}%` : '';
+      const revText    = s.rev_growth != null ? `גידול: ${s.rev_growth > 0 ? '+' : ''}${s.rev_growth}%` : '';
+
+      return `
+        <div class="pick-card ${rankCls}">
+          <div class="pick-rank">${medal}</div>
+          <div class="pick-top">
+            <div>
+              <div class="pick-ticker">${s.ticker}</div>
+              <div class="pick-name">${s.name}</div>
+            </div>
+            <div class="pick-price">
+              <div class="val">$${s.price.toFixed(2)}</div>
+              <div class="chg ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${s.change_5d}%</div>
+            </div>
+          </div>
+          <div class="score-bar-wrap">
+            <div class="score-label"><span>ציון פוטנציאל</span><span>${s.score}/100</span></div>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill ${scoreColor(s.score)}" style="width:${fillW}%"></div>
+            </div>
+          </div>
+          <div class="pick-reasons">
+            ${s.reasons.map(r => `<span class="reason-chip">${r}</span>`).join('')}
+            ${upsideText ? `<span class="reason-chip" style="background:#00ba7c15;color:var(--green);border-color:#00ba7c33">${upsideText}</span>` : ''}
+          </div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem">
+            ${s.sector} ${revText ? '· ' + revText : ''} ${s.pe ? '· P/E ' + s.pe : ''}
+          </div>
+          <div class="pick-footer">
+            <button class="btn-analyze" onclick="openAnalystModal('${s.ticker}', '${s.name.replace(/'/g,"\\'")}')">🔍 ניתוח מעמיק</button>
+            <button class="btn-watch" data-watch="${s.ticker}" onclick="toggleWatch('${s.ticker}', this)">⭐</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    area.innerHTML = statusHtml + `<div class="picks-grid">${cardsHtml}</div>` + `
+      <div class="disclaimer" style="margin-top:1.5rem">
+        ⚠️ הציון מבוסס על אלגוריתם כמותי בלבד. אין להסתמך עליו כהמלצת השקעה.
+      </div>`;
+  }
 
   async function generateReport() {
     const strategy  = document.querySelector('.strat-btn.active')?.dataset.strat || 'Momentum';

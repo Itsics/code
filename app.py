@@ -218,7 +218,113 @@ SECTOR_MAP = {
     "Real Estate":["OPEN"],
 }
 
-_report_cache = {}  # key -> (data, expiry)
+_report_cache   = {}  # key -> (data, expiry)
+_weekly_cache   = {"data": None, "expiry": None}
+
+ALL_TICKERS = list({t for pool in STRATEGY_TICKERS.values() for t in pool} |
+                   {t for sec in SECTOR_MAP.values() for t in sec})
+
+
+def _score_stock(info, hist_5d):
+    """Return (score 0-100, list of reason strings)."""
+    score, reasons = 0, []
+
+    # 1. Revenue growth — up to 30 pts
+    rg = info.get("revenueGrowth") or 0
+    if   rg > 0.50: score += 30; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+    elif rg > 0.30: score += 22; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+    elif rg > 0.15: score += 14; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+    elif rg > 0:    score +=  6; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+
+    # 2. 5-day price momentum — up to 25 pts
+    if len(hist_5d) >= 2:
+        c0 = float(hist_5d["Close"].iloc[0])
+        c1 = float(hist_5d["Close"].iloc[-1])
+        chg = (c1 - c0) / c0 if c0 else 0
+        if   chg > 0.10: score += 25; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+        elif chg > 0.05: score += 18; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+        elif chg > 0.02: score += 10; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+        elif chg > 0:    score +=  4; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+
+    # 3. Volume vs average — up to 20 pts
+    avg_vol  = info.get("averageVolume") or 1
+    curr_vol = info.get("volume") or 0
+    ratio = curr_vol / avg_vol if avg_vol else 1
+    if   ratio > 2.0: score += 20; reasons.append(f"נפח פי {ratio:.1f} מהממוצע")
+    elif ratio > 1.5: score += 14; reasons.append(f"נפח פי {ratio:.1f} מהממוצע")
+    elif ratio > 1.2: score +=  8; reasons.append(f"נפח גבוה מהממוצע")
+
+    # 4. 52-week position (near high = momentum) — up to 15 pts
+    hi = info.get("fiftyTwoWeekHigh") or 0
+    lo = info.get("fiftyTwoWeekLow")  or 0
+    pr = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+    if hi > lo > 0:
+        pos = (pr - lo) / (hi - lo)
+        if   pos > 0.85: score += 15; reasons.append(f"קרוב לשיא 52 שבועות ({pos*100:.0f}%)")
+        elif pos > 0.70: score += 10; reasons.append(f"בטווח גבוה 52 שבועות ({pos*100:.0f}%)")
+        elif pos > 0.50: score +=  5
+
+    # 5. Analyst price target upside — up to 10 pts
+    target = info.get("targetMeanPrice") or 0
+    if target > 0 and pr > 0:
+        upside = (target - pr) / pr
+        if   upside > 0.30: score += 10; reasons.append(f"פוטנציאל +{upside*100:.0f}% לפי אנליסטים")
+        elif upside > 0.15: score +=  7; reasons.append(f"פוטנציאל +{upside*100:.0f}% לפי אנליסטים")
+        elif upside > 0.05: score +=  4; reasons.append(f"פוטנציאל +{upside*100:.0f}% לפי אנליסטים")
+
+    return min(score, 100), reasons
+
+
+@app.route("/api/weekly-analysis")
+def api_weekly_analysis():
+    now = datetime.now()
+    if _weekly_cache["data"] and _weekly_cache["expiry"] and now < _weekly_cache["expiry"]:
+        return jsonify(_weekly_cache["data"])
+
+    results = []
+    for ticker in ALL_TICKERS:
+        try:
+            t    = yf.Ticker(ticker)
+            info = t.info
+            hist = t.history(period="5d")
+            if hist.empty: continue
+
+            price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+            if not price: continue
+
+            score, reasons = _score_stock(info, hist)
+            c0 = float(hist["Close"].iloc[0])
+            change_5d = round((price - c0) / c0 * 100, 2) if c0 else 0
+            rg = info.get("revenueGrowth")
+            target = info.get("targetMeanPrice") or 0
+            upside = round((target - price) / price * 100, 1) if target and price else None
+
+            results.append({
+                "ticker":      ticker,
+                "name":        info.get("longName") or info.get("shortName") or ticker,
+                "price":       round(price, 2),
+                "change_5d":   change_5d,
+                "score":       score,
+                "reasons":     reasons,
+                "sector":      info.get("sector") or "N/A",
+                "rev_growth":  round(rg * 100, 1) if rg is not None else None,
+                "analyst_upside": upside,
+                "pe":          round(info.get("trailingPE") or info.get("forwardPE") or 0, 1) or None,
+                "volume":      round((info.get("volume") or 0) / 1_000_000, 2),
+            })
+        except Exception:
+            continue
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+    payload = {
+        "top_picks": results[:15],
+        "total_scanned": len(results),
+        "as_of": now.strftime("%H:%M:%S"),
+        "date":  now.strftime("%d/%m/%Y"),
+    }
+    _weekly_cache["data"]   = payload
+    _weekly_cache["expiry"] = now + timedelta(minutes=15)
+    return jsonify(payload)
 
 
 @app.route("/api/stock-report")

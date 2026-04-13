@@ -18,9 +18,11 @@ def add_cors(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
     return response
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 @app.route("/stock-report")
 def serve_stock_report():
-    return send_from_directory(os.path.dirname(__file__), "stock_report.html")
+    return send_from_directory(BASE_DIR, "stock_report.html")
 
 _cache = {"data": None, "expiry": None}
 CACHE_MINUTES = 10

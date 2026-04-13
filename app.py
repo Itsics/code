@@ -5,8 +5,9 @@ Open: http://127.0.0.1:5000
 Data is cached for 10 minutes; refresh the page to get latest after cache expires.
 """
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
+import yfinance as yf
 from daily_movers import fetch_all_movers
 
 app = Flask(__name__)
@@ -171,6 +172,114 @@ def index():
 </body>
 </html>"""
     return html
+
+
+# ── Ticker pools per strategy ──
+STRATEGY_TICKERS = {
+    "Momentum": [
+        "NVDA","SMCI","ARM","PLTR","RXRX","PLUG","UPST","AFRM","DUOL","CAVA",
+        "RKLB","ASTS","HIMS","TTD","SHOP","HOOD","MNDY","GTLB",
+    ],
+    "Value": [
+        "INTC","CSCO","HPQ","AMGN","GILD","SCHW","SOFI","ACMR",
+        "CRUS","CLNE","PENN","META","GOOGL","QCOM","TXN",
+    ],
+    "Growth": [
+        "SNOW","DDOG","MNDY","GTLB","HIMS","IRTC","TTD","SHOP",
+        "HOOD","ASTS","RKLB","ZS","MDB","TEAM","CRWD","PANW",
+    ],
+    "Breakout": [
+        "MRVL","ALAB","CIEN","DOCS","NU","FLUT","WING","ARRY",
+        "TDW","AFRM","RXRX","NVDA","AMD","AVGO","LRCX","KLAC",
+    ],
+}
+
+SECTOR_MAP = {
+    "Technology": ["NVDA","SMCI","ARM","PLTR","INTC","CSCO","HPQ","SNOW","DDOG","MNDY",
+                   "GTLB","MRVL","ALAB","CIEN","ZS","MDB","TEAM","CRWD","PANW","META","GOOGL"],
+    "Healthcare": ["RXRX","NVAX","AMGN","GILD","HIMS","IRTC","DOCS"],
+    "Energy":     ["PLUG","FCEL","CLNE","STEM","ARRY"],
+    "Finance":    ["UPST","AFRM","SCHW","SOFI","HOOD","NU","FLUT","PENN"],
+    "Consumer":   ["DUOL","CAVA","TTD","SHOP","WING"],
+    "Industrials":["JOBY","RKLB","ASTS","TDW","ACMR"],
+    "Materials":  ["MP","CRUS"],
+    "Real Estate":["OPEN"],
+}
+
+_report_cache = {}  # key -> (data, expiry)
+
+
+@app.route("/api/stock-report")
+def api_stock_report():
+    strategy = request.args.get("strategy", "Momentum")
+    sectors   = request.args.get("sectors", "").split(",")
+    count     = min(int(request.args.get("count", 10)), 20)
+    min_change = float(request.args.get("min_change", 5))
+    timeframe  = request.args.get("timeframe", "5d")
+
+    # Build candidate list from strategy ∩ sectors
+    strat_pool = set(STRATEGY_TICKERS.get(strategy, STRATEGY_TICKERS["Momentum"]))
+    sector_pool = set()
+    for sec in sectors:
+        sector_pool.update(SECTOR_MAP.get(sec.strip(), []))
+    candidates = list(strat_pool & sector_pool) if sector_pool else list(strat_pool)
+
+    if not candidates:
+        return jsonify({"stocks": [], "error": "No candidates for selected filters"})
+
+    cache_key = f"{strategy}|{'|'.join(sorted(candidates))}|{timeframe}"
+    now = datetime.now()
+    if cache_key in _report_cache:
+        cached_data, expiry = _report_cache[cache_key]
+        if now < expiry:
+            # still filter by min_change and count on cached data
+            filtered = [s for s in cached_data if abs(s["changePct"]) >= min_change]
+            return jsonify({"stocks": filtered[:count], "as_of": now.strftime("%H:%M:%S")})
+
+    tf_map = {"1d": "2d", "5d": "5d", "1m": "1mo", "3m": "3mo"}
+    yf_period = tf_map.get(timeframe, "5d")
+
+    results = []
+    for ticker in candidates:
+        try:
+            t = yf.Ticker(ticker)
+            info = t.info
+
+            price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+            prev  = info.get("previousClose") or price
+            hist  = t.history(period=yf_period)
+            if hist.empty or price == 0:
+                continue
+
+            start_price = float(hist["Close"].iloc[0])
+            change_pct  = round((price - start_price) / start_price * 100, 2) if start_price else 0
+            volume      = round((info.get("volume") or info.get("regularMarketVolume") or 0) / 1_000_000, 2)
+            pe          = info.get("trailingPE") or info.get("forwardPE")
+            rev_growth  = info.get("revenueGrowth")
+            rev_growth_pct = round(rev_growth * 100, 1) if rev_growth is not None else None
+            market_cap  = info.get("marketCap") or 0
+            name        = info.get("longName") or info.get("shortName") or ticker
+            sector      = info.get("sector") or "Technology"
+
+            results.append({
+                "ticker":      ticker,
+                "name":        name,
+                "currentPrice": round(price, 2),
+                "changePct":   change_pct,
+                "pe":          round(pe, 1) if pe else None,
+                "rev_growth":  rev_growth_pct,
+                "volume":      volume,
+                "marketCap":   market_cap,
+                "sector":      sector,
+            })
+        except Exception:
+            continue
+
+    results.sort(key=lambda x: abs(x["changePct"]), reverse=True)
+    _report_cache[cache_key] = (results, now + timedelta(minutes=10))
+
+    filtered = [s for s in results if abs(s["changePct"]) >= min_change]
+    return jsonify({"stocks": filtered[:count], "as_of": now.strftime("%H:%M:%S")})
 
 
 if __name__ == "__main__":

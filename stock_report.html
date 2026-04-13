@@ -316,7 +316,10 @@
         <p>סינון וניתוח מניות · נתונים מבוססי-מודל, לא בזמן אמת</p>
       </div>
     </div>
-    <div style="font-size:0.8rem;color:var(--muted);" id="headerDate"></div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <span style="font-size:0.75rem;color:var(--muted);" id="headerDate"></span>
+      <span style="font-size:0.72rem;padding:0.2rem 0.6rem;border-radius:6px;background:#1d9bf022;color:var(--accent);border:1px solid #1d9bf044;">נתונים חיים דרך Flask · הרץ: <code>python app.py</code></span>
+    </div>
   </header>
 
   <div class="main">
@@ -620,10 +623,10 @@
 
   // Thesis templates per strategy
   const THESIS_TEMPLATES = {
-    Momentum:  (s) => `${s.name} מציגה מומנטום חזק עם גידול בהכנסות של ${s.rev_growth}% YoY. הדרייברים העיקריים הם ${s.tags.slice(0,2).join(' ו-')}. נפח מסחר גבוה מאשר ממוצע ה-20 יום מעיד על עניין מוסדי גובר.`,
-    Value:     (s) => `${s.name} נסחרת בהנחה משמעותית ביחס לשוק עם P/E של ${s.pe ?? 'N/A'}. המניה מציגה יסודות איתנים ב-${s.tags[0]}, ועם זרז חיובי אחד עשויה להצדיק רי-ריינג' משמעותי.`,
-    Growth:    (s) => `${s.name} צומחת בקצב של ${s.rev_growth}% YoY במגזר ה-${s.tags[0]}. חברה בשלב הוצאה לפועל עם CAC יורד ו-NRR מעל 120%, פרופיל סיכון/תשואה אטרקטיבי לטווח של 12–24 חודש.`,
-    Breakout:  (s) => `${s.name} מפרצת מתצורת קונסולידציה עם נפח גבוה. הדרייבר הקטליטי הוא ${s.tags[0]}. מניות עם פריצות כאלה לרוב ממשיכות 15–30% מעבר לנקודת הפריצה.`,
+    Momentum:  (s) => `${s.name} מציגה מומנטום חזק${s.rev_growth != null ? ` עם גידול בהכנסות של ${s.rev_growth}% YoY` : ''}. נפח מסחר של ${s.volume}M מעיד על עניין מוסדי גובר בסקטור ה-${s.sector}.`,
+    Value:     (s) => `${s.name} נסחרת${s.pe ? ` עם P/E של ${s.pe}` : ' בהנחה'} ביחס לשוק. יסודות איתנים בסקטור ה-${s.sector}${s.rev_growth != null ? ` עם גידול של ${s.rev_growth}%` : ''} מצדיקים עניין.`,
+    Growth:    (s) => `${s.name} צומחת${s.rev_growth != null ? ` בקצב של ${s.rev_growth}% YoY` : ''} במגזר ה-${s.sector}. פרופיל סיכון/תשואה אטרקטיבי לטווח של 12–24 חודש.`,
+    Breakout:  (s) => `${s.name} מפרצת מתצורת קונסולידציה בסקטור ה-${s.sector} עם נפח של ${s.volume}M. מניות כאלה לרוב ממשיכות 15–30% מעבר לנקודת הפריצה.`,
   };
 
   function pickStocks(strategy, sectors, count, minChange) {
@@ -652,36 +655,53 @@
     return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function generateReport() {
-    const strategy = document.querySelector('.strat-btn.active')?.dataset.strat || 'Momentum';
-    const sectors = [...document.querySelectorAll('.sector-chip.active')].map(c => c.dataset.sector);
-    const count = parseInt(document.getElementById('stockCount').value);
+  const API_BASE = 'http://127.0.0.1:5001';
+
+  async function generateReport() {
+    const strategy  = document.querySelector('.strat-btn.active')?.dataset.strat || 'Momentum';
+    const sectors   = [...document.querySelectorAll('.sector-chip.active')].map(c => c.dataset.sector);
+    const count     = parseInt(document.getElementById('stockCount').value);
     const minChange = parseInt(document.getElementById('minChange').value);
+    const timeframe = document.getElementById('timeframe').value;
 
-    if (sectors.length === 0) {
-      alert('בחר לפחות סקטור אחד');
-      return;
-    }
+    if (sectors.length === 0) { alert('בחר לפחות סקטור אחד'); return; }
 
-    const btn = document.getElementById('generateBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ מנתח שוק...';
-
+    const btn  = document.getElementById('generateBtn');
     const area = document.getElementById('contentArea');
-    area.innerHTML = `<div class="loading"><div class="spinner"></div><p>סורק ${count} מניות פוטנציאליות ב-${strategy} — עיבוד נתונים...</p></div>`;
+    btn.disabled = true;
+    btn.textContent = '⏳ מושך נתונים אמיתיים...';
+    area.innerHTML = `<div class="loading"><div class="spinner"></div><p>מושך נתונים מ-Yahoo Finance עבור אסטרטגיית ${strategy}...<br><small style="color:var(--muted)">זה עשוי לקחת 10–20 שניות</small></p></div>`;
 
-    setTimeout(() => {
-      const stocks = pickStocks(strategy, sectors, count, minChange);
-      renderReport(stocks, strategy, sectors, count);
+    try {
+      const params = new URLSearchParams({ strategy, sectors: sectors.join(','), count, min_change: minChange, timeframe });
+      const res    = await fetch(`${API_BASE}/api/stock-report?${params}`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const { stocks, as_of, error } = await res.json();
+      if (error) throw new Error(error);
+      renderReport(stocks, strategy, sectors, as_of);
+    } catch (err) {
+      area.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">⚠️</div>
+          <h3>שגיאה בטעינת נתונים</h3>
+          <p>${err.message}</p>
+          <p style="font-size:0.8rem;margin-top:1rem">ודא ש-<code>python app.py</code> רץ על פורט 5001</p>
+        </div>`;
+    } finally {
       btn.disabled = false;
       btn.textContent = '🔍 צור דוח יומי';
-    }, 1400);
+    }
   }
 
-  function renderReport(stocks, strategy, sectors, count) {
+  function renderReport(stocks, strategy, sectors, as_of) {
     const area = document.getElementById('contentArea');
     const timeframeLabel = { '1d':'1 יום','5d':'5 ימים','1m':'חודש','3m':'3 חודשים' }[document.getElementById('timeframe').value] || '5 ימים';
     const strategyEmoji = { Momentum:'⚡', Value:'💎', Growth:'🚀', Breakout:'🔔' }[strategy] || '📈';
+
+    if (!stocks || stocks.length === 0) {
+      area.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>לא נמצאו מניות</h3><p>נסה להקטין את אחוז השינוי המינימלי או להוסיף סקטורים</p></div>`;
+      return;
+    }
 
     const statusHtml = `
       <div class="status-bar">
@@ -689,12 +709,15 @@
         <span class="badge badge-strategy">${strategyEmoji} ${strategy}</span>
         <span class="badge badge-count">${sectors.length} סקטורים</span>
         <span>טווח: ${timeframeLabel}</span>
-        <span class="status-date">עודכן: ${new Date().toLocaleTimeString('he-IL')}</span>
+        <span style="color:var(--green);font-size:0.75rem">● נתונים חיים</span>
+        <span class="status-date">עודכן: ${as_of}</span>
       </div>`;
 
     const cardsHtml = stocks.map(s => {
       const isPos = s.changePct >= 0;
       const thesisFn = THESIS_TEMPLATES[strategy] || THESIS_TEMPLATES.Momentum;
+      const revColor = s.rev_growth == null ? 'var(--muted)' : s.rev_growth >= 0 ? 'var(--green)' : 'var(--red)';
+      const revText  = s.rev_growth == null ? 'N/A' : `${s.rev_growth > 0 ? '+' : ''}${s.rev_growth}%`;
       return `
         <div class="stock-card">
           <div class="card-header">
@@ -715,11 +738,11 @@
             </div>
             <div class="metric">
               <div class="metric-label">גידול הכנסות</div>
-              <div class="metric-value" style="color:${s.rev_growth >= 0 ? 'var(--green)' : 'var(--red)'}">${s.rev_growth > 0 ? '+' : ''}${s.rev_growth}%</div>
+              <div class="metric-value" style="color:${revColor}">${revText}</div>
             </div>
             <div class="metric">
               <div class="metric-label">נפח (M)</div>
-              <div class="metric-value">${s.vol}M</div>
+              <div class="metric-value">${s.volume}M</div>
             </div>
             <div class="metric">
               <div class="metric-label">סקטור</div>
@@ -731,7 +754,7 @@
             </div>
           </div>
           <div class="card-thesis">${thesisFn(s)}</div>
-          <div class="card-tags">${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+          <div class="card-tags"></div>
           <div class="card-footer">
             <button class="btn-analyze" onclick="openAnalystModal('${s.ticker}', '${s.name}')">🔍 ניתוח מעמיק</button>
             <button class="btn-watch" data-watch="${s.ticker}" onclick="toggleWatch('${s.ticker}', this)">⭐</button>

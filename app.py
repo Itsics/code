@@ -5,12 +5,22 @@ Open: http://127.0.0.1:5000
 Data is cached for 10 minutes; refresh the page to get latest after cache expires.
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from datetime import datetime, timedelta
+import os
 import yfinance as yf
 from daily_movers import fetch_all_movers
 
 app = Flask(__name__)
+
+@app.after_request
+def add_cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
+@app.route("/stock-report")
+def serve_stock_report():
+    return send_from_directory(os.path.dirname(__file__), "stock_report.html")
 
 _cache = {"data": None, "expiry": None}
 CACHE_MINUTES = 10

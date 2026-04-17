@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>דוח יומי — מניות פוטנציאליות בנאסד"ק</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --bg: #0f1419;
+      --surface: #16181c;
+      --surface2: #1d2127;
+      --border: #2f3336;
+      --text: #e7e9ea;
+      --muted: #71767b;
+      --accent: #1d9bf0;
+      --green: #00ba7c;
+      --red: #f4212e;
+      --yellow: #ffd700;
+      --purple: #a855f7;
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .app { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    .logo { display: flex; align-items: center; gap: 0.6rem; }
+    .logo-icon { font-size: 1.4rem; }
+    .logo h1 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+    .logo p { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+    .main { display: grid; grid-template-columns: 300px 1fr; gap: 0; }
+
+    /* ── Sidebar ── */
+    aside {
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 1.5rem;
+      height: calc(100vh - 65px);
+      overflow-y: auto;
+      position: sticky;
+      top: 65px;
+    }
+
+    aside h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 1rem; }
+
+    .field-group { margin-bottom: 1.2rem; }
+    .field-group label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; }
+
+    select, input[type=range], input[type=number] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.85rem;
+      outline: none;
+      appearance: none;
+    }
+    select:focus, input[type=number]:focus { border-color: var(--accent); }
+
+    input[type=range] {
+      padding: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .range-row { display: flex; align-items: center; gap: 0.5rem; }
+    .range-val { font-size: 0.82rem; color: var(--accent); white-space: nowrap; min-width: 3rem; text-align: left; }
+
+    /* Strategy pills */
+    .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+    .strat-btn {
+      padding: 0.5rem 0.4rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .strat-btn:hover { border-color: var(--accent); color: var(--text); }
+    .strat-btn.active { border-color: var(--accent); background: #1d9bf022; color: var(--accent); font-weight: 600; }
+
+    /* Sector checkboxes */
+    .sector-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .sector-chip {
+      padding: 0.3rem 0.65rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .sector-chip.active { border-color: var(--purple); background: #a855f722; color: var(--purple); }
+
+    .generate-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: background 0.15s;
+    }
+    .generate-btn:hover { background: #1a8cd8; }
+    .generate-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+    /* ── Main Content ── */
+    .content { padding: 1.5rem 2rem; overflow-y: auto; }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .status-bar .badge {
+      padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+    }
+    .badge-strategy { background: #1d9bf022; color: var(--accent); border: 1px solid #1d9bf044; }
+    .badge-count { background: #00ba7c22; color: var(--green); border: 1px solid #00ba7c44; }
+    .status-date { margin-right: auto; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center; padding: 5rem 2rem; color: var(--muted);
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.1rem; margin: 0 0 0.5rem; color: var(--text); }
+    .empty-state p { font-size: 0.85rem; max-width: 300px; margin: 0 auto; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Stock cards grid */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+
+    .stock-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      transition: border-color 0.15s, transform 0.15s;
+      cursor: default;
+    }
+    .stock-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.8rem; }
+    .card-ticker { font-size: 1.1rem; font-weight: 700; }
+    .card-name { font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem; }
+    .card-change {
+      font-size: 0.9rem; font-weight: 700; padding: 0.2rem 0.6rem;
+      border-radius: 8px; white-space: nowrap;
+    }
+    .pos { color: var(--green); background: #00ba7c1a; }
+    .neg { color: var(--red); background: #f4212e1a; }
+
+    .card-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .metric { background: var(--surface2); border-radius: 8px; padding: 0.4rem 0.5rem; }
+    .metric-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .metric-value { font-size: 0.85rem; font-weight: 600; margin-top: 0.1rem; }
+
+    .card-thesis {
+      font-size: 0.78rem; color: var(--muted); line-height: 1.5;
+      border-top: 1px solid var(--border); padding-top: 0.7rem; margin-top: 0.4rem;
+    }
+
+    .card-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
+    .tag {
+      font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 20px;
+      background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+    }
+
+    .card-footer { display: flex; gap: 0.5rem; margin-top: 0.9rem; }
+    .btn-analyze {
+      flex: 1; padding: 0.45rem;
+      border-radius: 8px; border: 1px solid var(--accent);
+      background: transparent; color: var(--accent);
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-analyze:hover { background: #1d9bf022; }
+    .btn-watch {
+      padding: 0.45rem 0.7rem;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      font-size: 0.78rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-watch:hover { border-color: var(--yellow); color: var(--yellow); }
+    .btn-watch.watching { border-color: var(--yellow); color: var(--yellow); background: #ffd70015; }
+
+    /* Analyst Prompts Modal */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: #000000bb;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 1rem;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%; max-width: 680px;
+      max-height: 85vh; overflow-y: auto;
+      padding: 1.5rem;
+      transform: scale(0.95); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+    .modal-title { font-size: 1rem; font-weight: 700; }
+    .modal-ticker { color: var(--accent); }
+    .close-btn {
+      background: none; border: none; color: var(--muted); font-size: 1.2rem;
+      cursor: pointer; line-height: 1; padding: 0.2rem;
+    }
+    .close-btn:hover { color: var(--text); }
+
+    .prompt-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 0.7rem;
+    }
+    .prompt-label { font-size: 0.7rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; }
+    .prompt-text { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+    .prompt-text strong { color: var(--text); }
+    .prompt-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+    .btn-copy {
+      font-size: 0.75rem; padding: 0.3rem 0.7rem;
+      border-radius: 6px; border: 1px solid var(--border);
+      background: none; color: var(--muted); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-copy.copied { border-color: var(--green); color: var(--green); }
+
+    /* Disclaimer */
+    .disclaimer {
+      margin-top: 2rem; padding: 0.75rem 1rem;
+      border-radius: 8px; border: 1px solid #ffd70033;
+      background: #ffd70008;
+      font-size: 0.75rem; color: #ffd70099;
+    }
+
+    /* ── Tab Nav ── */
+    .tab-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tab-btn {
+      padding: 0.5rem 1.2rem; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); font-size: 0.85rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+    .tab-btn.active { border-color: var(--accent); background: #1d9bf022; color: var(--accent); font-weight: 700; }
+
+    /* ── Weekly / Top Picks ── */
+    .weekly-header { margin-bottom: 1.2rem; }
+    .weekly-header h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.3rem; }
+    .weekly-header p  { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+    .picks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.9rem; }
+
+    .pick-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .pick-card:hover { border-color: var(--yellow); transform: translateY(-2px); }
+    .pick-card.rank-1 { border-color: #ffd700; box-shadow: 0 0 12px #ffd70022; }
+    .pick-card.rank-2 { border-color: #c0c0c0; }
+    .pick-card.rank-3 { border-color: #cd7f32; }
+
+    .pick-rank { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .rank-1 .pick-rank { color: var(--yellow); }
+    .rank-2 .pick-rank { color: #c0c0c0; }
+    .rank-3 .pick-rank { color: #cd7f32; }
+
+    .pick-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.7rem; }
+    .pick-ticker { font-size: 1rem; font-weight: 700; }
+    .pick-name   { font-size: 0.72rem; color: var(--muted); }
+    .pick-price  { text-align: left; }
+    .pick-price .val { font-size: 0.95rem; font-weight: 700; }
+    .pick-price .chg { font-size: 0.75rem; }
+
+    .score-bar-wrap { margin-bottom: 0.7rem; }
+    .score-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .score-label span:last-child { font-weight: 700; color: var(--text); }
+    .score-bar-bg { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .score-high   { background: var(--green); }
+    .score-medium { background: var(--yellow); }
+    .score-low    { background: var(--red); }
+
+    .pick-reasons { margin-bottom: 0.7rem; }
+    .reason-chip {
+      display: inline-block; font-size: 0.68rem;
+      padding: 0.15rem 0.5rem; border-radius: 20px; margin: 0.15rem 0.15rem 0 0;
+      background: #1d9bf015; color: var(--accent); border: 1px solid #1d9bf033;
+    }
+
+    .pick-footer { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+
+    .weekly-scan-btn {
+      width: 100%; padding: 0.65rem;
+      border-radius: 10px; border: none;
+      background: linear-gradient(135deg, #1d9bf0, #a855f7);
+      color: #fff; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; margin-bottom: 1.2rem;
+      transition: opacity 0.15s;
+    }
+    .weekly-scan-btn:hover { opacity: 0.9; }
+    .weekly-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Watchlist sidebar panel */
+    .watchlist-panel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .watchlist-panel h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 0 0 0.7rem; }
+    .watchlist-item {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .watchlist-item:last-child { border: none; }
+    .watchlist-empty { font-size: 0.78rem; color: var(--muted); text-align: center; padding: 0.5rem 0; }
+    .remove-watch { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; }
+    .remove-watch:hover { color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <span class="logo-icon">📊</span>
+      <div>
+        <h1>מנוע דוחות — מניות פוטנציאליות בנאסד"ק</h1>
+        <p>סינון וניתוח מניות · נתונים מבוססי-מודל, לא בזמן אמת</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <span style="font-size:0.75rem;color:var(--muted);" id="headerDate"></span>
+      <span style="font-size:0.72rem;padding:0.2rem 0.6rem;border-radius:6px;background:#1d9bf022;color:var(--accent);border:1px solid #1d9bf044;">נתונים חיים דרך Flask · הרץ: <code>python app.py</code></span>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- Sidebar / Filters -->
+    <aside>
+      <h2>הגדרות דוח</h2>
+
+      <!-- Strategy -->
+      <div class="field-group">
+        <label>אסטרטגיה</label>
+        <div class="strategy-grid">
+          <div class="strat-btn active" data-strat="Momentum">⚡ Momentum</div>
+          <div class="strat-btn" data-strat="Value">💎 Value</div>
+          <div class="strat-btn" data-strat="Growth">🚀 Growth</div>
+          <div class="strat-btn" data-strat="Breakout">🔔 Breakout</div>
+        </div>
+      </div>
+
+      <!-- Market Cap -->
+      <div class="field-group">
+        <label>שווי שוק מינימלי</label>
+        <select id="minMarketCap">
+          <option value="micro">Micro Cap (&lt; $300M)</option>
+          <option value="small">Small Cap ($300M – $2B)</option>
+          <option value="mid" selected>Mid Cap ($2B – $10B)</option>
+          <option value="large">Large Cap (&gt; $10B)</option>
+        </select>
+      </div>
+
+      <!-- Volume -->
+      <div class="field-group">
+        <label>נפח מסחר יומי מינימלי</label>
+        <select id="minVolume">
+          <option value="500k">500K</option>
+          <option value="1m" selected>1M</option>
+          <option value="5m">5M</option>
+          <option value="10m">10M</option>
+        </select>
+      </div>
+
+      <!-- Timeframe -->
+      <div class="field-group">
+        <label>טווח זמן לניתוח</label>
+        <select id="timeframe">
+          <option value="1d">יום אחד</option>
+          <option value="5d" selected>5 ימים</option>
+          <option value="1m">חודש</option>
+          <option value="3m">3 חודשים</option>
+        </select>
+      </div>
+
+      <!-- Min Change % -->
+      <div class="field-group">
+        <label>שינוי % מינימלי בטווח הנבחר</label>
+        <div class="range-row">
+          <input type="range" id="minChange" min="2" max="40" value="10" step="1">
+          <span class="range-val" id="minChangeVal">10%</span>
+        </div>
+      </div>
+
+      <!-- Stock count -->
+      <div class="field-group">
+        <label>מספר מניות בדוח</label>
+        <select id="stockCount">
+          <option value="5">5 מניות</option>
+          <option value="10" selected>10 מניות</option>
+          <option value="15">15 מניות</option>
+          <option value="20">20 מניות</option>
+        </select>
+      </div>
+
+      <!-- Sectors -->
+      <div class="field-group">
+        <label>סקטורים</label>
+        <div class="sector-grid" id="sectorGrid">
+          <div class="sector-chip active" data-sector="Technology">טכנולוגיה</div>
+          <div class="sector-chip active" data-sector="Healthcare">בריאות</div>
+          <div class="sector-chip active" data-sector="Energy">אנרגיה</div>
+          <div class="sector-chip active" data-sector="Finance">פיננסים</div>
+          <div class="sector-chip active" data-sector="Consumer">צרכנות</div>
+          <div class="sector-chip active" data-sector="Industrials">תעשייה</div>
+          <div class="sector-chip" data-sector="Materials">חומרים</div>
+          <div class="sector-chip" data-sector="Real Estate">נדל"ן</div>
+        </div>
+      </div>
+
+      <button class="generate-btn" id="generateBtn" onclick="generateReport()">🔍 צור דוח יומי</button>
+
+      <!-- Watchlist -->
+      <div class="watchlist-panel" id="watchlistPanel">
+        <h3>⭐ רשימת מעקב</h3>
+        <div id="watchlistItems"><p class="watchlist-empty">אין מניות במעקב</p></div>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="tab-nav">
+        <button class="tab-btn active" id="tabDaily"   onclick="switchTab('daily')">📋 דוח יומי</button>
+        <button class="tab-btn"        id="tabWeekly"  onclick="switchTab('weekly')">🏆 ניתוח שבועי · פוטנציאל גבוה</button>
+      </div>
+
+      <!-- Daily tab -->
+      <div id="panelDaily">
+        <div id="contentArea">
+          <div class="empty-state">
+            <div class="icon">📈</div>
+            <h3>מוכן לסרוק את השוק</h3>
+            <p>הגדר את הקריטריונים בצד שמאל ולחץ "צור דוח יומי" לקבל רשימת מניות פוטנציאליות</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly tab -->
+      <div id="panelWeekly" style="display:none">
+        <div class="weekly-header">
+          <h2>🏆 מניות עם הפוטנציאל הגבוה ביותר לעלות</h2>
+          <p>ציון מבוסס על: גידול הכנסות · מומנטום שבועי · נפח מסחר · מיקום 52-שבועות · יעד אנליסטים</p>
+        </div>
+        <button class="weekly-scan-btn" id="weeklyScanBtn" onclick="loadWeeklyAnalysis()">🔍 סרוק את כל המניות ומצא את הטובות ביותר</button>
+        <div id="weeklyContent">
+          <div class="empty-state">
+            <div class="icon">🏆</div>
+            <h3>לחץ לסריקה שבועית</h3>
+            <p>הסריקה בוחנת את כל המניות במאגר ומדרגת אותן לפי 5 גורמים. תיקח כ-30–60 שניות.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Analyst Prompts Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <div class="modal-title">ניתוח מעמיק — <span class="modal-ticker" id="modalTicker"></span></div>
+      <button class="close-btn" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div id="modalPrompts"></div>
+  </div>
+</div>
+
+<script>
+  // ── Date ──
+  document.getElementById('headerDate').textContent =
+    new Date().toLocaleDateString('he-IL', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // ── Range display ──
+  const minChangeEl = document.getElementById('minChange');
+  const minChangeVal = document.getElementById('minChangeVal');
+  minChangeEl.addEventListener('input', () => { minChangeVal.textContent = minChangeEl.value + '%'; });
+
+  // ── Strategy ──
+  document.querySelectorAll('.strat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.strat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // ── Sectors ──
+  document.querySelectorAll('.sector-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  // ── Watchlist state ──
+  let watchlist = new Set();
+
+  function updateWatchlistUI() {
+    const el = document.getElementById('watchlistItems');
+    if (watchlist.size === 0) {
+      el.innerHTML = '<p class="watchlist-empty">אין מניות במעקב</p>';
+      return;
+    }
+    el.innerHTML = [...watchlist].map(t => `
+      <div class="watchlist-item">
+        <span style="font-weight:600;color:var(--accent)">${t}</span>
+        <button class="remove-watch" onclick="removeWatch('${t}')">✕</button>
+      </div>`).join('');
+  }
+
+  function removeWatch(ticker) {
+    watchlist.delete(ticker);
+    updateWatchlistUI();
+    // Update button state in cards
+    const btn = document.querySelector(`[data-watch="${ticker}"]`);
+    if (btn) { btn.classList.remove('watching'); btn.textContent = '⭐'; }
+  }
+
+  function toggleWatch(ticker, btn) {
+    if (watchlist.has(ticker)) {
+      watchlist.delete(ticker);
+      btn.classList.remove('watching');
+      btn.textContent = '⭐';
+    } else {
+      watchlist.add(ticker);
+      btn.classList.add('watching');
+      btn.textContent = '★';
+    }
+    updateWatchlistUI();
+  }
+
+  // ── Stock data generator (model-based estimates) ──
+  const STOCK_POOLS = {
+    Momentum: {
+      Technology: [
+        { ticker:'NVDA', name:'NVIDIA Corporation', price:875, pe:60, rev_growth:122, sector:'Technology', tags:['AI','Semiconductors','Data Center'] },
+        { ticker:'SMCI', name:'Super Micro Computer', price:385, pe:22, rev_growth:89, sector:'Technology', tags:['AI Infrastructure','Servers'] },
+        { ticker:'ARM',  name:'Arm Holdings', price:128, pe:90, rev_growth:48, sector:'Technology', tags:['Semiconductors','Licensing','IoT'] },
+        { ticker:'PLTR', name:'Palantir Technologies', price:23, pe:78, rev_growth:21, sector:'Technology', tags:['AI','Government','Analytics'] },
+        { ticker:'MSTR', name:'MicroStrategy', price:1320, pe:null, rev_growth:8, sector:'Technology', tags:['Bitcoin','Software'] },
+      ],
+      Healthcare: [
+        { ticker:'RXRX', name:'Recursion Pharmaceuticals', price:9.4, pe:null, rev_growth:34, sector:'Healthcare', tags:['AI Drug Discovery','Biotech'] },
+        { ticker:'NVAX', name:'Novavax', price:7.8, pe:null, rev_growth:-18, sector:'Healthcare', tags:['Vaccines','Biotech'] },
+        { ticker:'ACHR', name:'Archer Aviation', price:8.5, pe:null, rev_growth:0, sector:'Healthcare', tags:['eVTOL','Aviation'] },
+      ],
+      Energy: [
+        { ticker:'PLUG', name:'Plug Power', price:4.2, pe:null, rev_growth:27, sector:'Energy', tags:['Hydrogen','Clean Energy'] },
+        { ticker:'FCEL', name:'FuelCell Energy', price:1.8, pe:null, rev_growth:12, sector:'Energy', tags:['Hydrogen','Fuel Cells'] },
+      ],
+      Finance: [
+        { ticker:'UPST', name:'Upstart Holdings', price:28, pe:null, rev_growth:24, sector:'Finance', tags:['AI Lending','Fintech'] },
+        { ticker:'AFRM', name:'Affirm Holdings', price:42, pe:null, rev_growth:36, sector:'Finance', tags:['BNPL','Fintech'] },
+      ],
+      Consumer: [
+        { ticker:'DUOL', name:'Duolingo', price:245, pe:180, rev_growth:44, sector:'Consumer', tags:['EdTech','Subscriptions','AI'] },
+        { ticker:'CAVA', name:'CAVA Group', price:88, pe:210, rev_growth:28, sector:'Consumer', tags:['Restaurants','Fast Casual'] },
+      ],
+      Industrials: [
+        { ticker:'JOBY', name:'Joby Aviation', price:6.2, pe:null, rev_growth:0, sector:'Industrials', tags:['eVTOL','Air Taxi'] },
+        { ticker:'RKLB', name:'Rocket Lab USA', price:8.9, pe:null, rev_growth:55, sector:'Industrials', tags:['Space','Launch'] },
+      ],
+      Materials: [
+        { ticker:'MP',   name:'MP Materials', price:18, pe:null, rev_growth:-12, sector:'Materials', tags:['Rare Earth','Mining'] },
+      ],
+      'Real Estate': [
+        { ticker:'OPEN', name:'Opendoor Technologies', price:2.1, pe:null, rev_growth:-22, sector:'Real Estate', tags:['PropTech','iBuying'] },
+      ],
+    },
+    Value: {
+      Technology: [
+        { ticker:'INTC', name:'Intel Corporation', price:34, pe:18, rev_growth:-14, sector:'Technology', tags:['Semiconductors','PC','Foundry'] },
+        { ticker:'CSCO', name:'Cisco Systems', price:48, pe:14, rev_growth:2, sector:'Technology', tags:['Networking','Security','Cloud'] },
+        { ticker:'HPQ',  name:'HP Inc.', price:29, pe:10, rev_growth:-5, sector:'Technology', tags:['PC','Printing','Hardware'] },
+      ],
+      Healthcare: [
+        { ticker:'AMGN', name:'Amgen', price:290, pe:16, rev_growth:22, sector:'Healthcare', tags:['Biotech','Obesity Drug','Biosimilars'] },
+        { ticker:'GILD', name:'Gilead Sciences', price:74, pe:13, rev_growth:8, sector:'Healthcare', tags:['HIV','Oncology','Pharma'] },
+      ],
+      Finance: [
+        { ticker:'SCHW', name:'Charles Schwab', price:68, pe:20, rev_growth:-8, sector:'Finance', tags:['Brokerage','Banking','Wealth'] },
+        { ticker:'SOFI', name:'SoFi Technologies', price:8.4, pe:null, rev_growth:26, sector:'Finance', tags:['Neobank','Fintech'] },
+      ],
+      Energy: [
+        { ticker:'CLNE', name:'Clean Energy Fuels', price:3.8, pe:null, rev_growth:9, sector:'Energy', tags:['RNG','Natural Gas','Clean Energy'] },
+      ],
+      Consumer: [
+        { ticker:'PENN', name:'PENN Entertainment', price:18, pe:null, rev_growth:-4, sector:'Consumer', tags:['Gaming','Sports Betting'] },
+      ],
+      Industrials: [
+        { ticker:'ACMR', name:'ACM Research', price:22, pe:12, rev_growth:38, sector:'Industrials', tags:['Semiconductor Equipment','China'] },
+      ],
+      Materials: [
+        { ticker:'CRUS', name:'Cirrus Logic', price:96, pe:16, rev_growth:-8, sector:'Materials', tags:['Semiconductors','Apple Supplier'] },
+      ],
+      'Real Estate': [],
+    },
+    Growth: {
+      Technology: [
+        { ticker:'SNOW', name:'Snowflake', price:158, pe:null, rev_growth:33, sector:'Technology', tags:['Cloud Data','AI','Enterprise'] },
+        { ticker:'DDOG', name:'Datadog', price:132, pe:null, rev_growth:27, sector:'Technology', tags:['Observability','Cloud','AI'] },
+        { ticker:'MNDY', name:'monday.com', price:245, pe:null, rev_growth:35, sector:'Technology', tags:['Work OS','SaaS','AI'] },
+        { ticker:'GTLB', name:'GitLab', price:62, pe:null, rev_growth:30, sector:'Technology', tags:['DevOps','AI','SaaS'] },
+      ],
+      Healthcare: [
+        { ticker:'HIMS', name:'Hims & Hers Health', price:19, pe:null, rev_growth:67, sector:'Healthcare', tags:['Telehealth','GLP-1','DTC'] },
+        { ticker:'IRTC', name:'iRhythm Technologies', price:92, pe:null, rev_growth:19, sector:'Healthcare', tags:['Digital Health','Cardiology'] },
+      ],
+      Consumer: [
+        { ticker:'TTD',  name:'The Trade Desk', price:78, pe:null, rev_growth:25, sector:'Consumer', tags:['AdTech','CTV','Programmatic'] },
+        { ticker:'SHOP', name:'Shopify', price:75, pe:null, rev_growth:26, sector:'Consumer', tags:['E-commerce','Fintech','SaaS'] },
+      ],
+      Finance: [
+        { ticker:'HOOD', name:'Robinhood Markets', price:24, pe:null, rev_growth:40, sector:'Finance', tags:['Retail Brokerage','Crypto','Fintech'] },
+      ],
+      Energy: [
+        { ticker:'STEM', name:'Stem Inc.', price:1.4, pe:null, rev_growth:-8, sector:'Energy', tags:['Energy Storage','AI','Grid'] },
+      ],
+      Industrials: [
+        { ticker:'ASTS', name:'AST SpaceMobile', price:28, pe:null, rev_growth:120, sector:'Industrials', tags:['Satellite','Broadband','Space'] },
+      ],
+      Materials: [],
+      'Real Estate': [],
+    },
+    Breakout: {
+      Technology: [
+        { ticker:'MRVL', name:'Marvell Technology', price:68, pe:null, rev_growth:7, sector:'Technology', tags:['AI Chips','Custom Silicon','5G'] },
+        { ticker:'ALAB', name:'Astera Labs', price:88, pe:null, rev_growth:195, sector:'Technology', tags:['AI Connectivity','Semiconductors'] },
+        { ticker:'CIEN', name:'Ciena Corporation', price:64, pe:28, rev_growth:14, sector:'Technology', tags:['Optical Networking','AI Infrastructure'] },
+      ],
+      Healthcare: [
+        { ticker:'DOCS', name:'Doximity', price:42, pe:35, rev_growth:17, sector:'Healthcare', tags:['Healthcare SaaS','Telehealth','AI'] },
+        { ticker:'ALHC', name:'Alignment Healthcare', price:14, pe:null, rev_growth:29, sector:'Healthcare', tags:['Value-Based Care','MA','Tech'] },
+      ],
+      Finance: [
+        { ticker:'NU',   name:'Nu Holdings', price:14, pe:28, rev_growth:58, sector:'Finance', tags:['Neobank','LatAm','Fintech'] },
+        { ticker:'FLUT', name:'Flutter Entertainment', price:245, pe:null, rev_growth:30, sector:'Finance', tags:['Sports Betting','FanDuel','Gaming'] },
+      ],
+      Consumer: [
+        { ticker:'WING', name:'Wingstop', price:295, pe:115, rev_growth:20, sector:'Consumer', tags:['Restaurants','Franchising','Digital'] },
+        { ticker:'RXST', name:'RxSight', price:38, pe:null, rev_growth:55, sector:'Consumer', tags:['MedTech','Ophthalmology'] },
+      ],
+      Energy: [
+        { ticker:'ARRY', name:'Array Technologies', price:10, pe:15, rev_growth:-5, sector:'Energy', tags:['Solar Trackers','Utility Scale'] },
+      ],
+      Industrials: [
+        { ticker:'TDW',  name:'Tidewater', price:68, pe:11, rev_growth:34, sector:'Industrials', tags:['Offshore Services','Oil','Energy'] },
+      ],
+      Materials: [],
+      'Real Estate': [],
+    },
+  };
+
+  // Thesis templates per strategy
+  const THESIS_TEMPLATES = {
+    Momentum:  (s) => `${s.name} מציגה מומנטום חזק${s.rev_growth != null ? ` עם גידול בהכנסות של ${s.rev_growth}% YoY` : ''}. נפח מסחר של ${s.volume}M מעיד על עניין מוסדי גובר בסקטור ה-${s.sector}.`,
+    Value:     (s) => `${s.name} נסחרת${s.pe ? ` עם P/E של ${s.pe}` : ' בהנחה'} ביחס לשוק. יסודות איתנים בסקטור ה-${s.sector}${s.rev_growth != null ? ` עם גידול של ${s.rev_growth}%` : ''} מצדיקים עניין.`,
+    Growth:    (s) => `${s.name} צומחת${s.rev_growth != null ? ` בקצב של ${s.rev_growth}% YoY` : ''} במגזר ה-${s.sector}. פרופיל סיכון/תשואה אטרקטיבי לטווח של 12–24 חודש.`,
+    Breakout:  (s) => `${s.name} מפרצת מתצורת קונסולידציה בסקטור ה-${s.sector} עם נפח של ${s.volume}M. מניות כאלה לרוב ממשיכות 15–30% מעבר לנקודת הפריצה.`,
+  };
+
+  function pickStocks(strategy, sectors, count, minChange) {
+    const pool = STOCK_POOLS[strategy] || STOCK_POOLS.Momentum;
+    let candidates = [];
+    sectors.forEach(sec => {
+      const arr = pool[sec] || [];
+      candidates.push(...arr);
+    });
+    // Shuffle and slice
+    candidates = candidates.sort(() => Math.random() - 0.5);
+    // Generate mock change values
+    return candidates.slice(0, count).map(s => {
+      const base = minChange / 100;
+      const extra = Math.random() * 0.4;
+      const sign = Math.random() > 0.2 ? 1 : -1; // mostly positive for "potential" stocks
+      const changePct = sign * (base + extra) * 100;
+      const price = s.price * (1 + changePct / 100);
+      const vol = (Math.random() * 50 + 5).toFixed(1);
+      return { ...s, changePct: parseFloat(changePct.toFixed(2)), currentPrice: parseFloat(price.toFixed(2)), vol: parseFloat(vol) };
+    });
+  }
+
+  function formatNum(n) {
+    if (n == null) return 'N/A';
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const API_BASE = 'http://127.0.0.1:5001';
+
+  // ── Tab switching ──
+  function switchTab(tab) {
+    document.getElementById('panelDaily').style.display  = tab === 'daily'  ? '' : 'none';
+    document.getElementById('panelWeekly').style.display = tab === 'weekly' ? '' : 'none';
+    document.getElementById('tabDaily').classList.toggle('active',  tab === 'daily');
+    document.getElementById('tabWeekly').classList.toggle('active', tab === 'weekly');
+  }
+
+  // ── Weekly Analysis ──
+  async function loadWeeklyAnalysis() {
+    const btn  = document.getElementById('weeklyScanBtn');
+    const area = document.getElementById('weeklyContent');
+    btn.disabled = true;
+    btn.textContent = '⏳ סורק את כל המניות...';
+    area.innerHTML = `<div class="loading"><div class="spinner"></div><p>סורק ${ALL_TICKERS_COUNT}+ מניות לפי 5 גורמים...<br><small style="color:var(--muted)">זה עשוי לקחת 30–60 שניות</small></p></div>`;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/weekly-analysis`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const { top_picks, total_scanned, as_of, date } = await res.json();
+      renderWeekly(top_picks, total_scanned, as_of, date);
+    } catch (err) {
+      area.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h3>שגיאה</h3><p>${err.message}</p></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔄 רענן סריקה';
+    }
+  }
+
+  const ALL_TICKERS_COUNT = 45;
+
+  function scoreColor(s) {
+    if (s >= 65) return 'score-high';
+    if (s >= 35) return 'score-medium';
+    return 'score-low';
+  }
+
+  function renderWeekly(picks, total, as_of, date) {
+    const area = document.getElementById('weeklyContent');
+    if (!picks || picks.length === 0) {
+      area.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>לא נמצאו תוצאות</h3></div>`;
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    const rankClass = (i) => i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+
+    const statusHtml = `
+      <div class="status-bar" style="margin-bottom:1rem">
+        <span>סרקתי <strong>${total} מניות</strong></span>
+        <span class="badge badge-count">Top ${picks.length}</span>
+        <span style="color:var(--green);font-size:0.75rem">● נתונים חיים</span>
+        <span class="status-date">${date} · ${as_of}</span>
+      </div>`;
+
+    const cardsHtml = picks.map((s, i) => {
+      const isPos = s.change_5d >= 0;
+      const fillW = Math.min(s.score, 100);
+      const rankCls = rankClass(i);
+      const medal = medals[i] || `#${i + 1}`;
+      const upsideText = s.analyst_upside != null ? `יעד אנליסטים: +${s.analyst_upside}%` : '';
+      const revText    = s.rev_growth != null ? `גידול: ${s.rev_growth > 0 ? '+' : ''}${s.rev_growth}%` : '';
+
+      return `
+        <div class="pick-card ${rankCls}">
+          <div class="pick-rank">${medal}</div>
+          <div class="pick-top">
+            <div>
+              <div class="pick-ticker">${s.ticker}</div>
+              <div class="pick-name">${s.name}</div>
+            </div>
+            <div class="pick-price">
+              <div class="val">$${s.price.toFixed(2)}</div>
+              <div class="chg ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${s.change_5d}%</div>
+            </div>
+          </div>
+          <div class="score-bar-wrap">
+            <div class="score-label"><span>ציון פוטנציאל</span><span>${s.score}/100</span></div>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill ${scoreColor(s.score)}" style="width:${fillW}%"></div>
+            </div>
+          </div>
+          <div class="pick-reasons">
+            ${s.reasons.map(r => `<span class="reason-chip">${r}</span>`).join('')}
+            ${upsideText ? `<span class="reason-chip" style="background:#00ba7c15;color:var(--green);border-color:#00ba7c33">${upsideText}</span>` : ''}
+          </div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem">
+            ${s.sector} ${revText ? '· ' + revText : ''} ${s.pe ? '· P/E ' + s.pe : ''}
+          </div>
+          <div class="pick-footer">
+            <button class="btn-analyze" onclick="openAnalystModal('${s.ticker}', '${s.name.replace(/'/g,"\\'")}')">🔍 ניתוח מעמיק</button>
+            <button class="btn-watch" data-watch="${s.ticker}" onclick="toggleWatch('${s.ticker}', this)">⭐</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    area.innerHTML = statusHtml + `<div class="picks-grid">${cardsHtml}</div>` + `
+      <div class="disclaimer" style="margin-top:1.5rem">
+        ⚠️ הציון מבוסס על אלגוריתם כמותי בלבד. אין להסתמך עליו כהמלצת השקעה.
+      </div>`;
+  }
+
+  async function generateReport() {
+    const strategy  = document.querySelector('.strat-btn.active')?.dataset.strat || 'Momentum';
+    const sectors   = [...document.querySelectorAll('.sector-chip.active')].map(c => c.dataset.sector);
+    const count     = parseInt(document.getElementById('stockCount').value);
+    const minChange = parseInt(document.getElementById('minChange').value);
+    const timeframe = document.getElementById('timeframe').value;
+
+    if (sectors.length === 0) { alert('בחר לפחות סקטור אחד'); return; }
+
+    const btn  = document.getElementById('generateBtn');
+    const area = document.getElementById('contentArea');
+    btn.disabled = true;
+    btn.textContent = '⏳ מושך נתונים אמיתיים...';
+    area.innerHTML = `<div class="loading"><div class="spinner"></div><p>מושך נתונים מ-Yahoo Finance עבור אסטרטגיית ${strategy}...<br><small style="color:var(--muted)">זה עשוי לקחת 10–20 שניות</small></p></div>`;
+
+    try {
+      const params = new URLSearchParams({ strategy, sectors: sectors.join(','), count, min_change: minChange, timeframe });
+      const res    = await fetch(`${API_BASE}/api/stock-report?${params}`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const { stocks, as_of, error } = await res.json();
+      if (error) throw new Error(error);
+      renderReport(stocks, strategy, sectors, as_of);
+    } catch (err) {
+      area.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">⚠️</div>
+          <h3>שגיאה בטעינת נתונים</h3>
+          <p>${err.message}</p>
+          <p style="font-size:0.8rem;margin-top:1rem">ודא ש-<code>python app.py</code> רץ על פורט 5001</p>
+        </div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 צור דוח יומי';
+    }
+  }
+
+  function renderReport(stocks, strategy, sectors, as_of) {
+    const area = document.getElementById('contentArea');
+    const timeframeLabel = { '1d':'1 יום','5d':'5 ימים','1m':'חודש','3m':'3 חודשים' }[document.getElementById('timeframe').value] || '5 ימים';
+    const strategyEmoji = { Momentum:'⚡', Value:'💎', Growth:'🚀', Breakout:'🔔' }[strategy] || '📈';
+
+    if (!stocks || stocks.length === 0) {
+      area.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>לא נמצאו מניות</h3><p>נסה להקטין את אחוז השינוי המינימלי או להוסיף סקטורים</p></div>`;
+      return;
+    }
+
+    const statusHtml = `
+      <div class="status-bar">
+        <span>נמצאו <strong>${stocks.length} מניות</strong></span>
+        <span class="badge badge-strategy">${strategyEmoji} ${strategy}</span>
+        <span class="badge badge-count">${sectors.length} סקטורים</span>
+        <span>טווח: ${timeframeLabel}</span>
+        <span style="color:var(--green);font-size:0.75rem">● נתונים חיים</span>
+        <span class="status-date">עודכן: ${as_of}</span>
+      </div>`;
+
+    const cardsHtml = stocks.map(s => {
+      const isPos = s.changePct >= 0;
+      const thesisFn = THESIS_TEMPLATES[strategy] || THESIS_TEMPLATES.Momentum;
+      const revColor = s.rev_growth == null ? 'var(--muted)' : s.rev_growth >= 0 ? 'var(--green)' : 'var(--red)';
+      const revText  = s.rev_growth == null ? 'N/A' : `${s.rev_growth > 0 ? '+' : ''}${s.rev_growth}%`;
+      return `
+        <div class="stock-card">
+          <div class="card-header">
+            <div>
+              <div class="card-ticker">${s.ticker}</div>
+              <div class="card-name">${s.name}</div>
+            </div>
+            <div class="card-change ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${s.changePct}%</div>
+          </div>
+          <div class="card-metrics">
+            <div class="metric">
+              <div class="metric-label">מחיר</div>
+              <div class="metric-value">$${formatNum(s.currentPrice)}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">P/E</div>
+              <div class="metric-value">${s.pe ?? 'N/A'}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">גידול הכנסות</div>
+              <div class="metric-value" style="color:${revColor}">${revText}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">נפח (M)</div>
+              <div class="metric-value">${s.volume}M</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">סקטור</div>
+              <div class="metric-value" style="font-size:0.75rem">${s.sector}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">אסטרטגיה</div>
+              <div class="metric-value" style="font-size:0.72rem;color:var(--accent)">${strategy}</div>
+            </div>
+          </div>
+          <div class="card-thesis">${thesisFn(s)}</div>
+          <div class="card-tags"></div>
+          <div class="card-footer">
+            <button class="btn-analyze" onclick="openAnalystModal('${s.ticker}', '${s.name}')">🔍 ניתוח מעמיק</button>
+            <button class="btn-watch" data-watch="${s.ticker}" onclick="toggleWatch('${s.ticker}', this)">⭐</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    const disclaimer = `
+      <div class="disclaimer">
+        ⚠️ <strong>אזהרה:</strong> הנתונים המוצגים הם הערכות אנליטיות מבוססות-מודל ואינם נתוני שוק בזמן אמת.
+        אין לראות בדוח זה המלצת השקעה. תמיד בצע מחקר עצמאי לפני קבלת החלטות.
+      </div>`;
+
+    area.innerHTML = statusHtml + `<div class="cards-grid">${cardsHtml}</div>` + disclaimer;
+  }
+
+  // ── Analyst Modal ──
+  const ANALYST_PROMPTS = [
+    { label: '1. Company Breakdown', template: (t, n) => `Act as a senior Wall Street analyst. Give me a complete breakdown of ${n} (${t}) — what they actually do, how they make money, their main business segments, and who their biggest competitors are. Keep it clear enough that a beginner could understand it.` },
+    { label: '2. Financial Health Check', template: (t, n) => `Analyse the financial health of ${n} (${t}) like you're writing an internal memo for a hedge fund. Cover revenue growth, profit margins, debt levels, cash flow, and any red flags investors should know about. Use plain language.` },
+    { label: '3. Bull vs Bear Case', template: (t, n) => `Give me the strongest bull case AND the strongest bear case for investing in ${n} (${t}) right now. Present both sides fairly, then tell me which argument you think is more compelling and why.` },
+    { label: '4. Valuation Check', template: (t, n) => `Using common valuation methods like P/E ratio, P/S ratio, and price-to-free cash flow, help me understand whether ${n} (${t}) stock looks overvalued, undervalued, or fairly priced right now. Compare it to its historical average and main competitors.` },
+    { label: '5. Risk Radar', template: (t, n) => `Identify the top 5 risks that could cause ${n} (${t}) stock to drop significantly over the next 12–24 months. For each risk, rate it low, medium, or high, and explain what I should watch for as an early warning sign.` },
+    { label: '6. Earnings Decoder', template: (t, n) => `I'll paste in the latest earnings call transcript or summary for ${n} (${t}). Translate the key points into plain English — what did management say about growth, guidance, and challenges? What did they avoid saying? What should investors actually pay attention to?` },
+    { label: '7. Investment Decision Framework', template: (t, n) => `Based on everything known about ${n} (${t}), build me a simple investment decision framework. What price would make this a strong buy? What's a fair value estimate? What would make you avoid this stock entirely? Give me clear numbers and reasoning.` },
+  ];
+
+  function openAnalystModal(ticker, name) {
+    document.getElementById('modalTicker').textContent = ticker;
+    document.getElementById('modalPrompts').innerHTML = ANALYST_PROMPTS.map((p, i) => `
+      <div class="prompt-card">
+        <div class="prompt-label">${p.label}</div>
+        <div class="prompt-text">${p.template(ticker, name).replace(ticker, `<strong>${ticker}</strong>`).replace(name, `<strong>${name}</strong>`)}</div>
+        <div class="prompt-actions">
+          <button class="btn-copy" onclick="copyPrompt(this, '${btoa(encodeURIComponent(p.template(ticker, name)))}')">📋 העתק פרומפט</button>
+        </div>
+      </div>`).join('');
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function copyPrompt(btn, b64) {
+    const text = decodeURIComponent(atob(b64));
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ הועתק!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '📋 העתק פרומפט'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  function closeModal(e) { if (e.target === document.getElementById('modalOverlay')) closeModalDirect(); }
+  function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
+</script>
+</body>
+</html>

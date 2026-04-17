@@ -5,11 +5,24 @@ Open: http://127.0.0.1:5000
 Data is cached for 10 minutes; refresh the page to get latest after cache expires.
 """
 
-from flask import Flask, request
+from flask import Flask, request, jsonify, send_from_directory
 from datetime import datetime, timedelta
+import os
+import yfinance as yf
 from daily_movers import fetch_all_movers
 
 app = Flask(__name__)
+
+@app.after_request
+def add_cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+@app.route("/stock-report")
+def serve_stock_report():
+    return send_from_directory(BASE_DIR, "stock_report.html")
 
 _cache = {"data": None, "expiry": None}
 CACHE_MINUTES = 10
@@ -171,6 +184,220 @@ def index():
 </body>
 </html>"""
     return html
+
+
+# ── Ticker pools per strategy ──
+STRATEGY_TICKERS = {
+    "Momentum": [
+        "NVDA","SMCI","ARM","PLTR","RXRX","PLUG","UPST","AFRM","DUOL","CAVA",
+        "RKLB","ASTS","HIMS","TTD","SHOP","HOOD","MNDY","GTLB",
+    ],
+    "Value": [
+        "INTC","CSCO","HPQ","AMGN","GILD","SCHW","SOFI","ACMR",
+        "CRUS","CLNE","PENN","META","GOOGL","QCOM","TXN",
+    ],
+    "Growth": [
+        "SNOW","DDOG","MNDY","GTLB","HIMS","IRTC","TTD","SHOP",
+        "HOOD","ASTS","RKLB","ZS","MDB","TEAM","CRWD","PANW",
+    ],
+    "Breakout": [
+        "MRVL","ALAB","CIEN","DOCS","NU","FLUT","WING","ARRY",
+        "TDW","AFRM","RXRX","NVDA","AMD","AVGO","LRCX","KLAC",
+    ],
+}
+
+SECTOR_MAP = {
+    "Technology": ["NVDA","SMCI","ARM","PLTR","INTC","CSCO","HPQ","SNOW","DDOG","MNDY",
+                   "GTLB","MRVL","ALAB","CIEN","ZS","MDB","TEAM","CRWD","PANW","META","GOOGL"],
+    "Healthcare": ["RXRX","NVAX","AMGN","GILD","HIMS","IRTC","DOCS"],
+    "Energy":     ["PLUG","FCEL","CLNE","STEM","ARRY"],
+    "Finance":    ["UPST","AFRM","SCHW","SOFI","HOOD","NU","FLUT","PENN"],
+    "Consumer":   ["DUOL","CAVA","TTD","SHOP","WING"],
+    "Industrials":["JOBY","RKLB","ASTS","TDW","ACMR"],
+    "Materials":  ["MP","CRUS"],
+    "Real Estate":["OPEN"],
+}
+
+_report_cache   = {}  # key -> (data, expiry)
+_weekly_cache   = {"data": None, "expiry": None}
+
+ALL_TICKERS = list({t for pool in STRATEGY_TICKERS.values() for t in pool} |
+                   {t for sec in SECTOR_MAP.values() for t in sec})
+
+
+def _score_stock(info, hist_5d):
+    """Return (score 0-100, list of reason strings)."""
+    score, reasons = 0, []
+
+    # 1. Revenue growth — up to 30 pts
+    rg = info.get("revenueGrowth") or 0
+    if   rg > 0.50: score += 30; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+    elif rg > 0.30: score += 22; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+    elif rg > 0.15: score += 14; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+    elif rg > 0:    score +=  6; reasons.append(f"גידול הכנסות {rg*100:.0f}% YoY")
+
+    # 2. 5-day price momentum — up to 25 pts
+    if len(hist_5d) >= 2:
+        c0 = float(hist_5d["Close"].iloc[0])
+        c1 = float(hist_5d["Close"].iloc[-1])
+        chg = (c1 - c0) / c0 if c0 else 0
+        if   chg > 0.10: score += 25; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+        elif chg > 0.05: score += 18; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+        elif chg > 0.02: score += 10; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+        elif chg > 0:    score +=  4; reasons.append(f"מומנטום שבועי +{chg*100:.1f}%")
+
+    # 3. Volume vs average — up to 20 pts
+    avg_vol  = info.get("averageVolume") or 1
+    curr_vol = info.get("volume") or 0
+    ratio = curr_vol / avg_vol if avg_vol else 1
+    if   ratio > 2.0: score += 20; reasons.append(f"נפח פי {ratio:.1f} מהממוצע")
+    elif ratio > 1.5: score += 14; reasons.append(f"נפח פי {ratio:.1f} מהממוצע")
+    elif ratio > 1.2: score +=  8; reasons.append(f"נפח גבוה מהממוצע")
+
+    # 4. 52-week position (near high = momentum) — up to 15 pts
+    hi = info.get("fiftyTwoWeekHigh") or 0
+    lo = info.get("fiftyTwoWeekLow")  or 0
+    pr = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+    if hi > lo > 0:
+        pos = (pr - lo) / (hi - lo)
+        if   pos > 0.85: score += 15; reasons.append(f"קרוב לשיא 52 שבועות ({pos*100:.0f}%)")
+        elif pos > 0.70: score += 10; reasons.append(f"בטווח גבוה 52 שבועות ({pos*100:.0f}%)")
+        elif pos > 0.50: score +=  5
+
+    # 5. Analyst price target upside — up to 10 pts
+    target = info.get("targetMeanPrice") or 0
+    if target > 0 and pr > 0:
+        upside = (target - pr) / pr
+        if   upside > 0.30: score += 10; reasons.append(f"פוטנציאל +{upside*100:.0f}% לפי אנליסטים")
+        elif upside > 0.15: score +=  7; reasons.append(f"פוטנציאל +{upside*100:.0f}% לפי אנליסטים")
+        elif upside > 0.05: score +=  4; reasons.append(f"פוטנציאל +{upside*100:.0f}% לפי אנליסטים")
+
+    return min(score, 100), reasons
+
+
+@app.route("/api/weekly-analysis")
+def api_weekly_analysis():
+    now = datetime.now()
+    if _weekly_cache["data"] and _weekly_cache["expiry"] and now < _weekly_cache["expiry"]:
+        return jsonify(_weekly_cache["data"])
+
+    results = []
+    for ticker in ALL_TICKERS:
+        try:
+            t    = yf.Ticker(ticker)
+            info = t.info
+            hist = t.history(period="5d")
+            if hist.empty: continue
+
+            price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+            if not price: continue
+
+            score, reasons = _score_stock(info, hist)
+            c0 = float(hist["Close"].iloc[0])
+            change_5d = round((price - c0) / c0 * 100, 2) if c0 else 0
+            rg = info.get("revenueGrowth")
+            target = info.get("targetMeanPrice") or 0
+            upside = round((target - price) / price * 100, 1) if target and price else None
+
+            results.append({
+                "ticker":      ticker,
+                "name":        info.get("longName") or info.get("shortName") or ticker,
+                "price":       round(price, 2),
+                "change_5d":   change_5d,
+                "score":       score,
+                "reasons":     reasons,
+                "sector":      info.get("sector") or "N/A",
+                "rev_growth":  round(rg * 100, 1) if rg is not None else None,
+                "analyst_upside": upside,
+                "pe":          round(info.get("trailingPE") or info.get("forwardPE") or 0, 1) or None,
+                "volume":      round((info.get("volume") or 0) / 1_000_000, 2),
+            })
+        except Exception:
+            continue
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+    payload = {
+        "top_picks": results[:15],
+        "total_scanned": len(results),
+        "as_of": now.strftime("%H:%M:%S"),
+        "date":  now.strftime("%d/%m/%Y"),
+    }
+    _weekly_cache["data"]   = payload
+    _weekly_cache["expiry"] = now + timedelta(minutes=15)
+    return jsonify(payload)
+
+
+@app.route("/api/stock-report")
+def api_stock_report():
+    strategy = request.args.get("strategy", "Momentum")
+    sectors   = request.args.get("sectors", "").split(",")
+    count     = min(int(request.args.get("count", 10)), 20)
+    min_change = float(request.args.get("min_change", 5))
+    timeframe  = request.args.get("timeframe", "5d")
+
+    # Build candidate list from strategy ∩ sectors
+    strat_pool = set(STRATEGY_TICKERS.get(strategy, STRATEGY_TICKERS["Momentum"]))
+    sector_pool = set()
+    for sec in sectors:
+        sector_pool.update(SECTOR_MAP.get(sec.strip(), []))
+    candidates = list(strat_pool & sector_pool) if sector_pool else list(strat_pool)
+
+    if not candidates:
+        return jsonify({"stocks": [], "error": "No candidates for selected filters"})
+
+    cache_key = f"{strategy}|{'|'.join(sorted(candidates))}|{timeframe}"
+    now = datetime.now()
+    if cache_key in _report_cache:
+        cached_data, expiry = _report_cache[cache_key]
+        if now < expiry:
+            # still filter by min_change and count on cached data
+            filtered = [s for s in cached_data if abs(s["changePct"]) >= min_change]
+            return jsonify({"stocks": filtered[:count], "as_of": now.strftime("%H:%M:%S")})
+
+    tf_map = {"1d": "2d", "5d": "5d", "1m": "1mo", "3m": "3mo"}
+    yf_period = tf_map.get(timeframe, "5d")
+
+    results = []
+    for ticker in candidates:
+        try:
+            t = yf.Ticker(ticker)
+            info = t.info
+
+            price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+            prev  = info.get("previousClose") or price
+            hist  = t.history(period=yf_period)
+            if hist.empty or price == 0:
+                continue
+
+            start_price = float(hist["Close"].iloc[0])
+            change_pct  = round((price - start_price) / start_price * 100, 2) if start_price else 0
+            volume      = round((info.get("volume") or info.get("regularMarketVolume") or 0) / 1_000_000, 2)
+            pe          = info.get("trailingPE") or info.get("forwardPE")
+            rev_growth  = info.get("revenueGrowth")
+            rev_growth_pct = round(rev_growth * 100, 1) if rev_growth is not None else None
+            market_cap  = info.get("marketCap") or 0
+            name        = info.get("longName") or info.get("shortName") or ticker
+            sector      = info.get("sector") or "Technology"
+
+            results.append({
+                "ticker":      ticker,
+                "name":        name,
+                "currentPrice": round(price, 2),
+                "changePct":   change_pct,
+                "pe":          round(pe, 1) if pe else None,
+                "rev_growth":  rev_growth_pct,
+                "volume":      volume,
+                "marketCap":   market_cap,
+                "sector":      sector,
+            })
+        except Exception:
+            continue
+
+    results.sort(key=lambda x: abs(x["changePct"]), reverse=True)
+    _report_cache[cache_key] = (results, now + timedelta(minutes=10))
+
+    filtered = [s for s in results if abs(s["changePct"]) >= min_change]
+    return jsonify({"stocks": filtered[:count], "as_of": now.strftime("%H:%M:%S")})
 
 
 if __name__ == "__main__":

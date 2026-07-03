@@ -1,0 +1,15 @@
+services:
+  multibill-client:
+    build: .
+    container_name: multibill-client
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MULTIBILL_GPG_PASSPHRASE=${MULTIBILL_GPG_PASSPHRASE}
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./keys:/app/keys:ro
+      - ./data/downloads:/app/downloads
+      - ./data/decrypted:/app/decrypted
+      - ./data/multibill.db:/app/multibill.db

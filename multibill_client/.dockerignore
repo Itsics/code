@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+tests/
+*.db
+downloads/
+decrypted/
+config.yaml
+keys/
+.git/

@@ -10,8 +10,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
-from config import config
+from config import config, save_config
 from models import init_db, get_session, FileRecord
 from sftp_client import SFTPClient
 from decryption import decrypt_file
@@ -136,4 +137,44 @@ def get_file(file_id: int):
 @app.post("/api/run-cycle")
 def trigger_pull_cycle():
     run_pull_cycle()
+    return {"status": "ok"}
+
+
+PASSWORD_PLACEHOLDER = "********"
+
+
+class SFTPSettings(BaseModel):
+    host: str
+    port: int = 22
+    username: str
+    password: str = ""
+    private_key_path: str = ""
+    remote_dir: str = "/"
+    local_dir: str = "./downloads"
+
+
+class EDISettings(BaseModel):
+    segment_separator: str = "~"
+    element_separator: str = "*"
+
+
+class ConfigUpdate(BaseModel):
+    sftp: SFTPSettings
+    edi: EDISettings
+
+
+@app.get("/api/config")
+def get_settings():
+    sftp_cfg = dict(config.get("sftp", {}))
+    sftp_cfg["password"] = PASSWORD_PLACEHOLDER if sftp_cfg.get("password") else ""
+    return {"sftp": sftp_cfg, "edi": config.get("edi", {})}
+
+
+@app.post("/api/config")
+def update_settings(update: ConfigUpdate):
+    sftp_values = update.sftp.model_dump()
+    if sftp_values["password"] == PASSWORD_PLACEHOLDER:
+        sftp_values["password"] = config.get("sftp", {}).get("password", "")
+
+    save_config({"sftp": sftp_values, "edi": update.edi.model_dump()})
     return {"status": "ok"}

@@ -12,9 +12,35 @@
     .status-error { color: red; }
     .status-downloaded, .status-decrypted { color: #b8860b; }
     button { padding: 0.5rem 1rem; margin-bottom: 1rem; cursor: pointer; }
+    fieldset { margin-bottom: 1.5rem; }
+    .field-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .field-row label { width: 10rem; }
+    .field-row input { flex: 1; padding: 0.25rem; }
+    #settings-status { margin-inline-start: 1rem; color: green; }
   </style>
 </head>
 <body>
+  <h1>Multibill Client - הגדרות</h1>
+  <form id="settings-form" onsubmit="return saveSettings(event)">
+    <fieldset>
+      <legend>SFTP</legend>
+      <div class="field-row"><label for="sftp-host">שרת (host)</label><input id="sftp-host" required></div>
+      <div class="field-row"><label for="sftp-port">פורט</label><input id="sftp-port" type="number" required></div>
+      <div class="field-row"><label for="sftp-username">שם משתמש</label><input id="sftp-username" required></div>
+      <div class="field-row"><label for="sftp-password">סיסמה</label><input id="sftp-password" type="password" placeholder="השאר ריק כדי לא לשנות"></div>
+      <div class="field-row"><label for="sftp-private-key">נתיב מפתח פרטי (SSH)</label><input id="sftp-private-key"></div>
+      <div class="field-row"><label for="sftp-remote-dir">תיקייה מרוחקת</label><input id="sftp-remote-dir" required></div>
+      <div class="field-row"><label for="sftp-local-dir">תיקייה מקומית</label><input id="sftp-local-dir" required></div>
+    </fieldset>
+    <fieldset>
+      <legend>EDI</legend>
+      <div class="field-row"><label for="edi-segment-sep">מפריד סגמנטים</label><input id="edi-segment-sep" maxlength="1" required></div>
+      <div class="field-row"><label for="edi-element-sep">מפריד אלמנטים</label><input id="edi-element-sep" maxlength="1" required></div>
+    </fieldset>
+    <button type="submit">שמור הגדרות</button>
+    <span id="settings-status"></span>
+  </form>
+
   <h1>Multibill Client - קבצים</h1>
   <button onclick="runCycle()">הרץ מחזור משיכה עכשיו</button>
   <table>
@@ -30,6 +56,51 @@
   </table>
 
   <script>
+    async function loadSettings() {
+      const res = await fetch('/api/config');
+      const cfg = await res.json();
+      document.getElementById('sftp-host').value = cfg.sftp.host || '';
+      document.getElementById('sftp-port').value = cfg.sftp.port || 22;
+      document.getElementById('sftp-username').value = cfg.sftp.username || '';
+      document.getElementById('sftp-password').value = '';
+      document.getElementById('sftp-password').placeholder = cfg.sftp.password ? 'סיסמה קיימת - השאר ריק כדי לא לשנות' : 'השאר ריק כדי לא לשנות';
+      document.getElementById('sftp-private-key').value = cfg.sftp.private_key_path || '';
+      document.getElementById('sftp-remote-dir').value = cfg.sftp.remote_dir || '';
+      document.getElementById('sftp-local-dir').value = cfg.sftp.local_dir || '';
+      document.getElementById('edi-segment-sep').value = cfg.edi.segment_separator || '~';
+      document.getElementById('edi-element-sep').value = cfg.edi.element_separator || '*';
+    }
+
+    async function saveSettings(event) {
+      event.preventDefault();
+      const passwordField = document.getElementById('sftp-password').value;
+      const body = {
+        sftp: {
+          host: document.getElementById('sftp-host').value,
+          port: parseInt(document.getElementById('sftp-port').value, 10),
+          username: document.getElementById('sftp-username').value,
+          password: passwordField || '********',
+          private_key_path: document.getElementById('sftp-private-key').value,
+          remote_dir: document.getElementById('sftp-remote-dir').value,
+          local_dir: document.getElementById('sftp-local-dir').value,
+        },
+        edi: {
+          segment_separator: document.getElementById('edi-segment-sep').value,
+          element_separator: document.getElementById('edi-element-sep').value,
+        },
+      };
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const statusEl = document.getElementById('settings-status');
+      statusEl.textContent = res.ok ? 'נשמר בהצלחה' : 'שגיאה בשמירה';
+      if (res.ok) loadSettings();
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      return false;
+    }
+
     async function loadFiles() {
       const res = await fetch('/api/files');
       const files = await res.json();
@@ -49,6 +120,7 @@
       loadFiles();
     }
 
+    loadSettings();
     loadFiles();
     setInterval(loadFiles, 10000);
   </script>

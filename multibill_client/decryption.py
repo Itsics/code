@@ -15,7 +15,9 @@ def decrypt_file(input_path: str, output_dir: str = None) -> str:
     output_dir = output_dir or pgp_cfg.get("decrypted_dir", "./decrypted")
     os.makedirs(output_dir, exist_ok=True)
 
-    gpg = gnupg.GPG()
+    # pinentry-mode loopback: מאפשר להעביר passphrase ישירות בלי צורך בפרומפט
+    # אינטראקטיבי (pinentry) - הכרחי כשרצים כשירות/שרת בלי TTY.
+    gpg = gnupg.GPG(options=["--pinentry-mode", "loopback"])
     key_path = pgp_cfg.get("private_key_path")
     if key_path and os.path.exists(key_path):
         with open(key_path, "rb") as key_file:

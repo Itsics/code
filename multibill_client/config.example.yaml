@@ -1,0 +1,25 @@
+sftp:
+  host: sftp.example.com
+  port: 22
+  username: multibill_user
+  # אחת מהשתיים: password או private_key_path
+  password: ""
+  private_key_path: ""
+  remote_dir: /incoming
+  local_dir: ./downloads
+
+pgp:
+  private_key_path: ./keys/private.asc
+  # הסיסמה עצמה לא נשמרת כאן - נטענת ממשתנה סביבה
+  passphrase_env: MULTIBILL_GPG_PASSPHRASE
+  decrypted_dir: ./decrypted
+
+edi:
+  segment_separator: "~"
+  element_separator: "*"
+
+scheduler:
+  interval_minutes: 15
+
+database:
+  url: sqlite:///./multibill.db

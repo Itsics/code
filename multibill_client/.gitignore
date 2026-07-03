@@ -1,0 +1,9 @@
+config.yaml
+downloads/
+decrypted/
+keys/
+*.db
+__pycache__/
+*.pyc
+.env
+.venv/

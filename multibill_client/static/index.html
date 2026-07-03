@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Multibill Client</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: right; }
+    th { background: #f0f0f0; }
+    .status-parsed { color: green; }
+    .status-error { color: red; }
+    .status-downloaded, .status-decrypted { color: #b8860b; }
+    button { padding: 0.5rem 1rem; margin-bottom: 1rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Multibill Client - קבצים</h1>
+  <button onclick="runCycle()">הרץ מחזור משיכה עכשיו</button>
+  <table>
+    <thead>
+      <tr>
+        <th>שם קובץ</th>
+        <th>סטטוס</th>
+        <th>סיכום EDI</th>
+        <th>שגיאה</th>
+      </tr>
+    </thead>
+    <tbody id="files-body"></tbody>
+  </table>
+
+  <script>
+    async function loadFiles() {
+      const res = await fetch('/api/files');
+      const files = await res.json();
+      const body = document.getElementById('files-body');
+      body.innerHTML = files.map(f => `
+        <tr>
+          <td>${f.filename}</td>
+          <td class="status-${f.status}">${f.status}</td>
+          <td>${f.parsed_summary || ''}</td>
+          <td>${f.error_message || ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function runCycle() {
+      await fetch('/api/run-cycle', { method: 'POST' });
+      loadFiles();
+    }
+
+    loadFiles();
+    setInterval(loadFiles, 10000);
+  </script>
+</body>
+</html>
